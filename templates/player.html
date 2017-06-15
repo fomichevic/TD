@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Игрок</title>
+
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #menu {
+            float: left;
+            position: fixed;
+            width: 250px;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="menu">
+    <a href="index.html">На главную</a><br>
+    <a href="leaders.html">Таблица лидеров</a><br>
+    <a href="game.html">К игре</a><br>
+</div>
+
+
+<div style="margin-left: 250px">
+    <img id="avatar" style="float: left" src="player/avatar.png" alt="Аватарка" width="256" height="256">
+
+    <table>
+        <tr>
+            <td colspan="2">{{ user.nickname }}</td>
+        </tr>
+
+        <tr>
+            <td>Время в игре</td>
+            <td>{{ user.time_played }}</td>
+        </tr>
+
+        <tr>
+            <td>Место в рейтинге</td>
+            <td>{{ user.leaderboard_place }}</td>
+        </tr>
+
+        <tr>
+            <td>Игр сыграно</td>
+            <td>{{ user.games_played }}</td>
+        </tr>
+
+        <tr>
+            <td>Выиграно</td>
+            <td>{{ user.games_won }}</td>
+        </tr>
+
+        <tr>
+            <td>Проиграно</td>
+            <td>{{ user.games_lost }}</td>
+        </tr>
+
+        <tr>
+            <td>Покинуто</td>
+            <td>{{ user.games_left }}</td>
+        </tr>
+
+        <tr>
+            <td>Вничью</td>
+            <td>{{ user.games_drawn }}</td>
+        </tr>
+
+        <tr>
+            <td>Процент побед</td>
+            <td>{{ user.win_rate }}</td>
+        </tr>
+    </table>
+</div>
+
+
+</body>
+</html>

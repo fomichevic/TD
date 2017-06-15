@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблица лидеров</title>
+
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #menu {
+            float: left;
+            position: fixed;
+            width: 250px;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="menu">
+    <a href="index.html">На главную</a><br>
+    <b>Таблица лидеров (вы здесь)</b><br>
+    <a href="game.html">К игре</a><br>
+</div>
+
+
+<div style="margin-left: 250px">
+    <table>
+        <!--<table>-->
+        <tbody>
+
+        {% for i in range(len(leaders)) %}
+        <tr>
+            <td>{{ i }}</td>
+            <td><a href="{{ user.url }}">{{ user.nickname }}</a></td>
+            <td>{{ user.short_explain }}</td>
+        </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+</div>
+
+
+</body>
+</html>
