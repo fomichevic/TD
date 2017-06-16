@@ -8,18 +8,13 @@ class GraphicsManager
     }
 
     constructor() {
-        // {
-        // textureName: string,
-        // textureBox: { left: number, top: number, right: number, bottom: number }
-        // }
-        this.static = [];
-        this.dynamic = [];
-        this.background = [];
+        this.static = {};
+        this.dynamic = {};
+        this.background = {};
     }
 
     sortList(listName) {
-        const list = this[listName];
-        list.sort((a, b) => {
+        this[listName].sort((a, b) => {
             if (a.texture < b.texture) {
                 return -1;
             }
@@ -40,11 +35,5 @@ class GraphicsManager
         });
     }
 
-    drawString() {
-        return JSON.stringify({
-            static: this.static,
-            dynamic: this.dynamic,
-            background: this.background
-        });
-    }
+
 }
