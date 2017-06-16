@@ -1,5 +1,4 @@
-class ResourceManager
-{
+class ResourceManager{
     static get() {
         if (!this.instance) {
             this.instance = new this();
