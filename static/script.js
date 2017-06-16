@@ -1,5 +1,7 @@
-var canvas, gl, program, colorUniform, width, height, time, u;
-
+var canvas, gl, program, textureProgram, colorUniform, width, height, time, time_rad, u, pBuffer, tpBuffer, emptyBuffer;
+const square = new Float32Array([0,0,  1,0,  1,1,  
+								 1,1,  0,1,  0,0]);
+var image = loadImage('graphics/tower.png');
 function getShader(id) {
 	var element = document.getElementById(id);
 	var getType = {
@@ -49,64 +51,97 @@ function resize(width, height) {
 	gl.viewport(0, 0, width, height);
 }
 
-function rgb(red, green, blue, alpha){
-	return {
-		r: red,
-		g: green,
-		b: blue,
-		a: alpha
-	};
+function rgba(red, green, blue, alpha){
+	this.r = red;
+	this.g = green;
+	this.b = blue;
+	this.a = alpha;
 }
 
-function draw(points, color, count){
+function draw(points, color){
+	gl.useProgram(program);
+	gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, toScreen(points), gl.DYNAMIC_DRAW);
+	gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
     gl.uniform4f(colorUniform, color.r, color.g, color.b, color.a);
-    gl.drawArrays(gl.TRIANGLES, 0, count);
+    gl.drawArrays(gl.TRIANGLES, 0, points.length / 2);
 }
 
 function drawLine(p1, p2, color){
+	gl.useProgram(program);
+	gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, toScreen([p1.x, p1.y, p2.x, p2.y]), gl.DYNAMIC_DRAW);
+	gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
 	gl.uniform4f(colorUniform, color.r, color.g, color.b, color.a);
 	gl.drawArrays(gl.LINES, 0, 2);
 }
 
 function drawGrid(){
 	for (var i = 0; i <= 200; i += 20)
-		drawLine(new vec2(0, i), new vec2(200, i), rgb(1, 1, 1, 1));
+		drawLine(new vec2(0, i), new vec2(200, i), new rgba(1, 1, 1, 1));
 	for (var i = 0; i <= 200; i += 20)
-		drawLine(new vec2(i, 0), new vec2(i, 200), rgb(1, 1, 1, 1));
+		drawLine(new vec2(i, 0), new vec2(i, 200), new rgba(1, 1, 1, 1));
 }
 
-function drawRegularPolygon(points, color){
-	draw(points, color, points.length / 2);
+function drawImage(img, pos, size){
+	if (!img.complete)
+		return;
+	console.log("Finally loaded!");
+	var points = toScreen(new Float32Array([pos.x,pos.y, pos.x+size.x,pos.y, pos.x+size.x,pos.y+size.y, 
+											pos.x+size.x,pos.y+size.y, pos.x,pos.y+size.y, pos.x,pos.y]));
+	gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, points, gl.DYNAMIC_DRAW);
+	gl.bindBuffer(gl.ARRAY_BUFFER, tpBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, square, gl.DYNAMIC_DRAW);
+	var texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img); //??? img is loaded successfully
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.useProgram(textureProgram);
+	
+	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTexturePosition'));
+	gl.bindBuffer(gl.ARRAY_BUFFER, tpBuffer);
+	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTexturePosition'), 2, gl.FLOAT, false, 0, 0);
+	
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.uniform1i(gl.getUniformLocation(program, 'uTexture'), 0);
+	
+	gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+function loadImage(src){
+	var img = new Image();
+	img.src = src;
+	return img;
 }
 
 function unit(pos){
 	this.pos = pos;
 	this.stopAt = pos;
-	this.chooseTarget = function t(){
+	this.chooseTarget = function (){
 		var r = Math.floor(Math.random() * 4);
 		switch(r){
 			case 0:
 				if (this.pos.x <= 8)
 					return new vec2(1, 0);
 				else
-					return t();
+					return this.chooseTarget();
 			case 1:
 				if (this.pos.y <= 8)
 					return new vec2(0, 1);
 				else
-					return t();
+					return this.chooseTarget();
 			case 2:
 				if (this.pos.x >= 1)
 					return new vec2(-1, 0);
 				else
-					return t();
+					return this.chooseTarget();
 			default:
 				if (this.pos.y >= 1)
 					return new vec2(0, -1);
 				else
-					return t();
+					return this.chooseTarget();
 		}
 	};
 	this.target = new vec2(0, 0);
@@ -118,7 +153,7 @@ function unit(pos){
 		this.pos = add(this.pos, multiply(this.target, 0.05));
 	};
 	this.draw = ()=>{
-		drawRegularPolygon(regularPolygon(add(multiply(this.pos, 20), new vec2(10, 10)), 5, 10, Math.sin(time)), rgb(Math.abs(Math.sin(time / 2)), Math.abs(Math.sin(time / 2 + 1)), Math.abs(Math.sin(time / 2 + 2)), 1));
+		draw(regularPolygon(add(multiply(this.pos, 20), new vec2(10, 10)), 5, 10, Math.sin(time)), new rgba(Math.abs(Math.sin(time / 2)), Math.abs(Math.sin(time / 2 + 1)), Math.abs(Math.sin(time / 2 + 2)), 1));
 	};
 }
 
@@ -209,14 +244,17 @@ function init(){
 		console.log('Unable to initialize WebGL. Your browser may not support it.');
 		return;
 	}
+	pBuffer = gl.createBuffer();
+	tpBuffer = gl.createBuffer();
 	program = createProgram(getShader('vertex'), getShader('fragment'));
+	textureProgram = createProgram(getShader('vertex-texture'), getShader('fragment-texture'));
 	colorUniform = gl.getUniformLocation(program, 'uColor');
 	resize(canvas.clientWidth, canvas.clientHeight);
 	gl.clearColor(0.0, 0.0, 0.0, 0.0)
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.useProgram(program);
+	gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aPosition'));
-	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aPosition'), 2, gl.FLOAT, false, 0, 0);
 	gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), gl.canvas.width, gl.canvas.height);
 	width = 200;
@@ -235,6 +273,7 @@ function main(){
 		requestAnimationFrame(drawFrame);
 		clear();
 		drawGrid();
+		drawImage(image, new vec2(0, 0), new vec2(20, 20));
 		u.update();
 		u.draw();
 	});

@@ -27,6 +27,14 @@
 				vTexturePosition = aTexturePosition;
 			}
 		</script>
+		<script id="fragment-texture" type="x-shader/x-fragment">
+			precision lowp float;
+			uniform sampler2D uTexture;
+			varying vec2 vTexturePosition;
+			void main(void) {
+				gl_FragColor = texture2D(uTexture, vTexturePosition);
+			}
+		</script>
 		<link type="text/css" rel="stylesheet" href="style.css">
 	</head>
 	<body onload="main()">
