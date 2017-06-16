@@ -2,6 +2,7 @@ var canvas, gl, program, textureProgram, colorUniform, width, height, time, time
 const square = new Float32Array([0,0,  1,0,  1,1,  
 								 1,1,  0,1,  0,0]);
 var image = loadImage('graphics/tower.png');
+var RegionsData;
 function getShader(id) {
 	var element = document.getElementById(id);
 	var getType = {
@@ -86,7 +87,7 @@ function drawGrid(){
 function drawImage(img, pos, size){
 	if (!img.complete)
 		return;
-	console.log("Finally loaded!");
+	console.log("Image is loaded");
 	var points = toScreen(new Float32Array([pos.x,pos.y, pos.x+size.x,pos.y, pos.x+size.x,pos.y+size.y, 
 											pos.x+size.x,pos.y+size.y, pos.x,pos.y+size.y, pos.x,pos.y]));
 	gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
@@ -95,25 +96,77 @@ function drawImage(img, pos, size){
 	gl.bufferData(gl.ARRAY_BUFFER, square, gl.DYNAMIC_DRAW);
 	var texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img); //??? img is loaded successfully
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
 	gl.generateMipmap(gl.TEXTURE_2D);
 	gl.useProgram(textureProgram);
-	
+
 	gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTexturePosition'));
 	gl.bindBuffer(gl.ARRAY_BUFFER, tpBuffer);
 	gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTexturePosition'), 2, gl.FLOAT, false, 0, 0);
-	
+
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.uniform1i(gl.getUniformLocation(program, 'uTexture'), 0);
-	
+
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
 function loadImage(src){
 	var img = new Image();
+	img.crossOrigin = "";
 	img.src = src;
 	return img;
+}
+
+function toPerc(arr, width, height){
+	var result = new Float32Array(arr);
+	for (var i = 0; i < arr.length; i++)
+		if (i % 2 == 0)
+			result[i] /= width;
+		else
+			result[i] /= height;
+	return result;
+}
+
+function getTextureRegionInfo(id){
+	return RegionsData[id];
+}
+
+function TextureRegion(id){
+	var data = getTextureRegionInfo(id);
+	this.img = loadImage(data.src);
+	this.pos = data.pos;
+	this.size = data.size;
+	this.draw = (pos, size)=>{
+		if (!img.complete)
+			return;
+		console.log("TextureRegion is loaded");
+		var points = toScreen(new Float32Array([pos.x,pos.y, pos.x+size.x,pos.y, pos.x+size.x,pos.y+size.y, 
+												pos.x+size.x,pos.y+size.y, pos.x,pos.y+size.y, pos.x,pos.y]));
+		gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, points, gl.DYNAMIC_DRAW);
+		var reg = toPerc(new Float32Array([this.pos.x,this.pos.y, this.pos.x+this.size.x,this.pos.y, this.pos.x+this.size.x,this.pos.y+this.size.y, 
+										   this.pos.x+this.size.x,this.pos.y+this.size.y, this.pos.x,this.pos.y+this.size.y, this.pos.x,this.pos.y]),
+						img.width,
+						img.height);
+		gl.bindBuffer(gl.ARRAY_BUFFER, tpBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, square, gl.DYNAMIC_DRAW);
+		var texture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.useProgram(textureProgram);
+	
+		gl.enableVertexAttribArray(gl.getAttribLocation(program, 'aTexturePosition'));
+		gl.bindBuffer(gl.ARRAY_BUFFER, tpBuffer);
+		gl.vertexAttribPointer(gl.getAttribLocation(program, 'aTexturePosition'), 2, gl.FLOAT, false, 0, 0);
+	
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.uniform1i(gl.getUniformLocation(program, 'uTexture'), 0);
+	
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
+	}
 }
 
 function unit(pos){
@@ -260,6 +313,13 @@ function init(){
 	width = 200;
 	height = 200;
 	time = 0;
+	var req = new XMLHttpRequest();
+	req.open("GET", "file:///C:/Users/hp/Documents/TD/static/atlas.txt", false);
+	req.onreadystatechange = ()=>{
+		if (req.readyState == 4 && (req.status == 200 || req.status == 0))
+			RegionsData = JSON.parse(req.responseText);
+	}
+	req.send(null);
 	requestAnimationFrame(function upd(){
 		requestAnimationFrame(upd);
 		time = (time + 3 * Math.PI / 180) % (2 * Math.PI);
