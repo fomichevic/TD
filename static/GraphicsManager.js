@@ -13,8 +13,13 @@ class GraphicsManager
         this.background = {};
     }
 
-    sortList(listName) {
-        this[listName].sort((a, b) => {
+    optimalIdList(type) {
+        const list = [];
+        for (let id in this[type]) {
+            list.push(id);
+        }
+
+        list.sort((a, b) => {
             if (a.texture < b.texture) {
                 return -1;
             }
@@ -33,7 +38,7 @@ class GraphicsManager
 
             return 0;
         });
+
+        return list;
     }
-
-
 }
