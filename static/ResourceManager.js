@@ -54,8 +54,6 @@ class ResourceManager {
         this.textures = {};
         this.icons = {};
 
-        this.onload = null;
-
         function loadTexture(name, src, descriptorSrc) {
             that.textures[name] = {img: null, desc: null};
 

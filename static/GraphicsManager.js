@@ -1,5 +1,4 @@
-class GraphicsManager
-{
+class GraphicsManager {
     static get() {
         if (!this.instance) {
             this.instance = new this();
@@ -32,32 +31,34 @@ class GraphicsManager
     }
 
     getSpriteList(type, optimize = false) {
+        const that = this;
+
+        function optimizeSpriteList(type) {
+            that[type].sort((a, b) => {
+                if (a.texture < b.texture) {
+                    return -1;
+                }
+
+                if (a.texture > b.texture) {
+                    return 1;
+                }
+
+                if (a.descriptor < b.descriptor) {
+                    return -1;
+                }
+
+                if (a.descriptor > b.descriptor) {
+                    return 1;
+                }
+
+                return 0;
+            });
+        }
+
         if (optimize) {
-            this.optimizeSpriteList(type);
+            optimizeSpriteList(type);
         }
 
         return this[type];
-    }
-
-    optimizeSpriteList(type) {
-        this[type].sort((a, b) => {
-            if (a.texture < b.texture) {
-                return -1;
-            }
-
-            if (a.texture > b.texture) {
-                return 1;
-            }
-
-            if (a.descriptor < b.descriptor) {
-                return -1;
-            }
-
-            if (a.descriptor > b.descriptor) {
-                return 1;
-            }
-
-            return 0;
-        });
     }
 }
