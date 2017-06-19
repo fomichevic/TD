@@ -1,11 +1,11 @@
-import eventlet
-from flask import Flask
-from flask_socketio import SocketIO
+from flask import Flask, render_template
 
-eventlet.monkey_patch()
+app=Flask(__name__)
 
-app = Flask(__name__)
-socketio = SocketIO(app, async_mode='eventlet')
+@app.route('/top')
+def top():
+   users = [('a', 'b'), ('b', 'c'), ('d', 'e')]
+   return render_template('top10.html', raiting=users)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+   app.run(debug=True)
