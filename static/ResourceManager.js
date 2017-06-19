@@ -1,5 +1,55 @@
+/**
+ * Пример использования:
+ *  const rm = new ResourceManager('list.json', () => {
+ *      const someIcon = rm.icons['icon-id']; // Объект Image
+ *
+ *      const textureObject = rm.textures['texture-id']; // Текстура с дескрипторами
+ *
+ *      const image = textureObject.img; // Объект Image
+ *
+ *      const descriptor = textureObject.desc['descriptor-id']; // Дескриптор спрайта
+ *      const {left, top, right, bottom} = descriptor; // Текстурные координаты
+ *  });
+ *
+ *  Пример файла list.json:
+ *  {
+ *    "icons": {
+ *      "icon-id": "icon-src.png",
+ *      "another-icon-id": "another-icon-src.png"
+ *    },
+ *
+ *    "textures": {
+ *      "texture-id": {
+ *        "src": "image-src.png",
+ *        "desc": "descriptors-src.json"
+ *      },
+ *
+ *      "another-texture-id": {
+ *        "src": "another-image-src.png",
+ *        "desc": "another-descriptors-src.json"
+ *      }
+ *    }
+ *  }
+ *
+ *  Пример файла descriptors-src.json:
+ *  {
+ *    "descriptor-id": {
+ *      "left": 0,
+ *      "top": 0,
+ *      "right": 0.5,
+ *      "bottom": 0.5
+ *    },
+ *
+ *    "another-descriptor-id": {
+ *      "left": 0.5,
+ *      "top": 0.5,
+ *      "right": 1,
+ *      "bottom": 1
+ *    }
+ *  }
+ */
 class ResourceManager {
-    constructor(callback, src) {
+    constructor(src, callback) {
         const that = this;
         this.textures = {};
         this.icons = {};
