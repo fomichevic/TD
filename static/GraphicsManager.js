@@ -8,18 +8,39 @@ class GraphicsManager
     }
 
     constructor() {
-        this.static = {};
-        this.dynamic = {};
-        this.background = {};
+        this.static = [];
+        this.dynamic = [];
+        this.background = [];
     }
 
-    optimalIdList(type) {
-        const list = [];
-        for (let id in this[type]) {
-            list.push(id);
+    createSprite(type, texture, descriptor) {
+        const sprite = {
+            texture: texture,
+            descriptor: descriptor,
+            position: {
+                x: 0,
+                y: 0
+            },
+            size: {
+                x: 0,
+                y: 0
+            }
+        };
+
+        this[type].push(sprite);
+        return sprite;
+    }
+
+    getSpriteList(type, optimize = false) {
+        if (optimize) {
+            this.optimizeSpriteList(type);
         }
 
-        list.sort((a, b) => {
+        return this[type];
+    }
+
+    optimizeSpriteList(type) {
+        this[type].sort((a, b) => {
             if (a.texture < b.texture) {
                 return -1;
             }
@@ -38,7 +59,5 @@ class GraphicsManager
 
             return 0;
         });
-
-        return list;
     }
 }
