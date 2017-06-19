@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Game</title>
+
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border: 0 none;
+        }
+
+        #menu {
+            float: left;
+        }
+
+        #board {
+            position: absolute;
+            top: 0;
+            background-color: lightgreen;
+            /*right: 0;*/
+            /*z-index: -1;*/
+        }
+
+        #resource-counter {
+            border: none;
+            background-color: white;
+        }
+    </style>
+
+    <script>
+        const unitInfo = {
+            'pawn':   { price:  50, name: 'Пешка'  },
+            'knight': { price: 100, name: 'Конь'   },
+            'bishop': { price: 100, name: 'Слон'   },
+            'castle': { price: 200, name: 'Ладья'  },
+            'queen':  { price: 250, name: 'Ферзь'  },
+            'king':   { price: 500, name: 'Король' },
+        };
+
+        const createdUnits = [ { type: 'pawn', position: { x: 200, y: 200 } } ];
+        let currentUnit = null;
+
+        const mousePosition = { x: 0, y: 0, correct: false };
+
+        let board, context, resourceCounter;
+
+        function drawUnit(unit) {
+            const img = document.getElementById(unit.type + '-image');
+            context.drawImage(img, unit.position.x - img.width / 2, unit.position.y - img.height / 2);
+        }
+
+        function animationFrame() {
+            context.fillStyle = 'lightgreen';
+            context.fillRect(0, 0, board.width, board.height);
+
+            context.fillStyle = 'red';
+            context.fillRect(mousePosition.x - 5, mousePosition.y - 5, 11, 11);
+
+            for (const unit of createdUnits) {
+                drawUnit(unit);
+            }
+
+            if (currentUnit && mousePosition.correct) {
+                drawUnit(currentUnit);
+            }
+
+            requestAnimationFrame(animationFrame);
+        }
+
+        function confirmExit() {
+            if (confirm('Вы действительно хотите выйти?')) {
+                window.location.href = "index.html";
+            }
+        }
+
+        function setResourceCount(count) {
+            resourceCounter.value = count;
+
+            for (const unit in unitInfo) {
+                document.getElementById(unit + '-button').disabled = count < unitInfo[unit].price;
+            }
+        }
+
+        function getResourceCount(count) {
+            return document.getElementById('resource-counter').value;
+        }
+
+        function summonUnit(unitType) {
+            currentUnit = { type: unitType, position: mousePosition };
+        }
+
+        function main() {
+            /* Канвас должен занимать наибольшее пространство,
+             * оставаться по центру, и при этом быть квадратным
+             * Средствами CSS это сделать невозможно
+             */
+            const c = document.getElementById('board');
+
+            function resizeCanvas() {
+                c.width = c.height = c.offsetWidth = c.offsetHeight = Math.min(
+                    document.body.offsetWidth - document.getElementById('menu').offsetWidth,
+                    document.body.offsetHeight);
+            }
+
+            resizeCanvas();
+
+            window.addEventListener('resize', resizeCanvas);
+            document.addEventListener('contextmenu', e => e.preventDefault());
+
+            for (const unit in unitInfo) {
+                document.getElementById(unit + '-price').innerHTML = '' + unitInfo[unit].price;
+                document.getElementById(unit + '-button').addEventListener('click', (e) => summonUnit(unit));
+            }
+
+            board = document.getElementById('board');
+            context = board.getContext('2d');
+            resourceCounter = document.getElementById('resource-counter');
+
+            board.addEventListener('mousemove', e => {
+                mousePosition.x = e.offsetX;
+                mousePosition.y = e.offsetY;
+                mousePosition.correct = true;
+            });
+
+            board.addEventListener('mouseleave', e => {
+                mousePosition.correct = false;
+            });
+
+            window.addEventListener('mousedown', e => {
+                if (!currentUnit) {
+                    return;
+                }
+
+                if ((e.button === 0) && mousePosition.correct) {
+                    setResourceCount(getResourceCount() - unitInfo[currentUnit.type].price);
+                    createdUnits.push(currentUnit);
+                    currentUnit.position = { x: currentUnit.position.x, y: currentUnit.position.y }
+                    currentUnit = null;
+                }
+
+                if (e.button === 2) {
+                    currentUnit = null;
+                }
+            });
+
+            setResourceCount(1000);
+            requestAnimationFrame(animationFrame);
+        }
+    </script>
+</head>
+
+<body onload="main()">
+
+<div id="menu">
+    <button onclick="confirmExit()">
+        <img src="resources/exit.png" alt="Выход">
+    </button>
+
+    <br><br><br>
+
+    Текущий ресурс: <input id="resource-counter" type="number" value="1000" disabled="true"><br>
+
+    <table>
+        <tbody>
+
+        <tr>
+            <td><button id="pawn-button">
+                <img id="pawn-image" src="resources/pawn.png" alt="Пешка">
+                <br><br>
+                <b id="pawn-price"></b>
+            </button></td>
+
+            <td><button id="knight-button">
+                <img id="knight-image" src="resources/knight.png" alt="Конь">
+                <br><br>
+                <b id="knight-price"></b>
+            </button></td>
+        </tr>
+
+        <tr>
+            <td><button id="bishop-button">
+                <img id="bishop-image" src="resources/bishop.png" alt="Слон">
+                <br><br>
+                <b id="bishop-price"></b>
+            </button></td>
+
+            <td><button id="castle-button">
+                <img id="castle-image" src="resources/castle.png" alt="Ладья">
+                <br><br>
+                <b id="castle-price"></b>
+            </button></td>
+        </tr>
+
+        <tr>
+            <td><button id="queen-button">
+                <img id="queen-image" src="resources/queen.png" alt="Ферзь">
+                <br><br>
+                <b id="queen-price"></b>
+            </button></td>
+
+            <td><button id="king-button">
+                <img id="king-image" src="resources/king.png" alt="Король">
+                <br><br>
+                <b id="king-price"></b>
+            </button></td>
+        </tr>
+
+        </tbody>
+    </table>
+</div>
+
+<canvas id="board"></canvas>
+
+</body>
+</html>
