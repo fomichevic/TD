@@ -5,22 +5,31 @@ from flask_openid import OpenID
 import sqlite3
 from config import off
 
-
-eventlet.monkey_patch()
-
 app = Flask(__name__)
-socketio = SocketIO(app, async_mode='eventlet')
-conn=sqlite3.connect('game.db')
-c=conn.cursor()
-#c.execute('CREATE TABLE users(id CHAR(100) not null, nickname CHAR(100) not null)')
 app.config.from_object('config')
+socketio = SocketIO(app, async_mode='eventlet')
 oid = OpenID(app, 'tmp')
+
+conn = sqlite3.connect('game.db')
+c = conn.cursor()
+
+
+@app.route('/top')
+def top():
+   users = [('a', 'b'), ('b', 'c'), ('d', 'e')]
+   return render_template('top10.html', raiting=users)
 
 @app.before_request
 def lookup_current_user():
     g.user = None
-    if ('user_id' in session) or off:
+    if off:
+        g.user = 'superuser'
+        return
+
+    if 'user_id' in session:
         g.user = session['user_id']
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 @oid.loginhandler
@@ -34,7 +43,6 @@ def login():
     return render_template('login.html', next=oid.get_next_url(),
                            error=oid.fetch_error())
 
-
 @oid.after_login
 def create_or_login(resp): 
     cursor = c.execute('SELECT id FROM users WHERE id=?', [resp.identity_url])
@@ -43,5 +51,7 @@ def create_or_login(resp):
         conn.commit()   
     session['user_id'] = resp.identity_url    
     return redirect('static/profile.html')
+
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+   app.run(debug=True)
