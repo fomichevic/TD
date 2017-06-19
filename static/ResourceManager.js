@@ -23,7 +23,7 @@ class ResourceManager {
                 request.onreadystatechange = () => {
                     if (request.readyState === 4 && request.status === 200) {
                         that.textures[name].desc = JSON.parse(request.responseText);
-                        checkReady();
+                        resolve();
                     }
                 };
                 request.open('GET', descriptorSrc, true);
