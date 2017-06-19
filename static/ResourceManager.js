@@ -101,11 +101,11 @@ class ResourceManager {
 
                 const promiseList = [];
 
-                for (let idx in loadList.icons) {
+                for (const idx in loadList.icons) {
                     promiseList.push(loadIcon(idx, loadList.icons[idx]));
                 }
 
-                for (let idx in loadList.textures) {
+                for (const idx in loadList.textures) {
                     promiseList.push(loadTexture(idx,
                         loadList.textures[idx].src,
                         loadList.textures[idx].desc));
