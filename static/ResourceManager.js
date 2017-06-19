@@ -1,42 +1,65 @@
 class ResourceManager
 {
-    static get() {
-        if (!this.instance) {
-            this.instance = new this();
-        }
-        return this.instance;
-    }
-
-    constructor() {
+    constructor(callback, src) {
+        const that = this;
         this.textures = {};
         this.icons = {};
 
         this.onload = null;
-    }
 
-    get ready() {
-        for (let idx in this.textures) {
-            if (!this.textures[idx] || !this.textures[idx].img || !this.textures[idx].desc) {
-                return false;
+        function isReady() {
+            for (let idx in that.textures) {
+                if (!that.textures[idx] || !that.textures[idx].img || !that.textures[idx].desc) {
+                    return false;
+                }
+            }
+
+            for (let idx in that.icons) {
+                if (!that.icons[idx]) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function checkReady() {
+            if (isReady()) {
+                callback();
             }
         }
 
-        for (let idx in this.icons) {
-            if (!this.icons[idx]) {
-                return false;
-            }
+        function loadTexture(name, src, descriptorSrc) {
+            that.textures[name] = { img: null, desc: null };
+
+            const img = new Image();
+            img.onload = () => {
+                that.textures[name].img = img;
+                checkReady();
+            };
+            img.src = src;
+
+            const request = new XMLHttpRequest();
+            request.onreadystatechange = () => {
+                if (request.readyState === 4 && request.status === 200) {
+                    that.textures[name].desc = JSON.parse(request.responseText);
+                    checkReady();
+                }
+            };
+            request.open('GET', descriptorSrc, true);
+            request.send();
         }
 
-        return true;
-    }
-
-    checkReady() {
-        if (this.onload && this.ready) {
-            this.onload();
+        function loadIcon(name, src) {
+            that.icons[name] = null;
+            const img = new Image();
+            img.onload = () => {
+                that.icons[name] = img;
+                checkReady();
+            };
+            img.src = src;
         }
-    }
 
-    load(src) {
         const request = new XMLHttpRequest();
 
         request.onreadystatechange = () => {
@@ -44,19 +67,19 @@ class ResourceManager
                 const loadList = JSON.parse(request.responseText);
 
                 for (let idx in loadList.icons) {
-                    this.icons[idx] = null;
+                    that.icons[idx] = null;
                 }
 
                 for (let idx in loadList.textures) {
-                    this.textures[idx] = { img: null, desc: null };
+                    that.textures[idx] = null;
                 }
 
                 for (let idx in loadList.icons) {
-                    this.loadIcon(idx, loadList.icons[idx]);
+                    loadIcon(idx, loadList.icons[idx]);
                 }
 
                 for (let idx in loadList.textures) {
-                    this.loadTexture(idx,
+                    loadTexture(idx,
                         loadList.textures[idx].src,
                         loadList.textures[idx].desc);
                 }
@@ -65,36 +88,5 @@ class ResourceManager
 
         request.open('GET', src, true);
         request.send();
-    }
-
-    loadTexture(name, src, descriptorsSrc) {
-        this.textures[name] = { img: null, desc: null };
-
-        const img = new Image();
-        img.onload = () => {
-            this.textures[name].img = img;
-            this.checkReady();
-        };
-        img.src = src;
-
-        const request = new XMLHttpRequest();
-        request.onreadystatechange = () => {
-            if (request.readyState === 4 && request.status === 200) {
-                this.textures[name].desc = JSON.parse(request.responseText);
-                this.checkReady();
-            }
-        };
-        request.open('GET', descriptorsSrc, true);
-        request.send();
-    }
-
-    loadIcon(name, src) {
-        this.icons[name] = null;
-        const img = new Image();
-        img.onload = () => {
-            this.icons[name] = img;
-            this.checkReady();
-        };
-        img.src = src;
     }
 }
