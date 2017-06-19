@@ -19,8 +19,10 @@ oid = OpenID(app, 'tmp')
 @app.before_request
 def lookup_current_user():
     g.user = None
-    if ('user_id' in session) or off:
+    if ('user_id' in session) :
         g.user = session['user_id']
+    if off :
+        g.user = 'User'
 
 @app.route('/login', methods=['GET', 'POST'])
 @oid.loginhandler
