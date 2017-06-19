@@ -1,11 +1,8 @@
-class ResourceManager
-{
+class ResourceManager {
     constructor(callback, src) {
         const that = this;
         this.textures = {};
         this.icons = {};
-
-        this.onload = null;
 
         function isReady() {
             for (let idx in that.textures) {
@@ -30,7 +27,7 @@ class ResourceManager
         }
 
         function loadTexture(name, src, descriptorSrc) {
-            that.textures[name] = { img: null, desc: null };
+            that.textures[name] = {img: null, desc: null};
 
             const img = new Image();
             img.onload = () => {
