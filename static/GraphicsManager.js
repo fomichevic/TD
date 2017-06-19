@@ -1,4 +1,5 @@
-class GraphicsManager {
+class GraphicsManager
+{
     static get() {
         if (!this.instance) {
             this.instance = new this();
