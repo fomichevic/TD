@@ -19,7 +19,6 @@ oid = OpenID(app, 'tmp')
 def top():
    return render_template('top10.html', top10())
 
-
 @app.before_request
 def lookup_current_user():
     g.user = None
@@ -29,12 +28,11 @@ def lookup_current_user():
     if 'user_id' in session:
         g.user = session['user_id']
 
-
 @app.route('/login', methods=['GET', 'POST'])
 @oid.loginhandler
-def login():
+def login(): 
     if g.user is not None:
-        return redirect('static/profile.html')
+        return redirect('profile') 
     if request.method == 'POST':
         openid = request.form.get('openid')
         if openid:
@@ -46,9 +44,19 @@ def login():
 def create_or_login(resp): 
     create_user(resp.identity_url, resp.nickname)
     session['user_id'] = resp.identity_url    
-    return redirect('static/profile.html')
+    return render_template('profile.html') 
 
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    g.user = None
+    return redirect('login')
+   
 
 if __name__ == '__main__':
-   create_db()
-   app.run(debug=True)
+    create_db()
+    app.run(debug=True)

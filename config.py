@@ -1,3 +1,3 @@
 CSRF_ENABLED=True
 SECRET_KEY='xyz239'
-off=True
+off=False

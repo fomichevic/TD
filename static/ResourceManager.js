@@ -11,9 +11,9 @@
  *      const {left, top, right, bottom} = descriptor; // Текстурные координаты
  *
  *      // Это генерируется автоматически, и не указывается в list.json
- *      const spriteTexture = rm.sprites['texture-id:descriptor-id']; // Текстура спрайта
- *      const spriteImage = spriteTexture.img; // Изображение
- *      const spriteDescriptor = spriteTexture.desc; // Дескриптор
+ *      const spriteDescriptor = rm.sprites['texture-id:descriptor-id']; // Описание спрайта
+ *      const spriteImage = spriteDescriptor.img; // Изображение
+ *      const spriteDescriptor = spriteDescriptor.desc; // Дескриптор
  *  });
  *
  *  Пример файла list.json:
