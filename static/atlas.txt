@@ -1,8 +1,8 @@
 {
-	[
+	{
 		"dirt": {"left": 0, "top": 0, "width": 200, "height": 200},
 		"twr1": {"left": 200, "top": 0, "width": 202, "height": 469},
 		"twr2": {"left": 402, "top": 0, "width": 240, "height": 469},
 		"base": {"left": 655, "top": 11, "width": 205, "height": 262}
-	]
+	}
 }
