@@ -1,8 +1,12 @@
 import eventlet
+
+eventlet.monkey_patch()
+
 from flask_socketio import SocketIO
 from flask import Flask, g, session, request, flash, render_template, redirect
 from flask_openid import OpenID
 import sqlite3
+import threading
 from config import off
 
 app = Flask(__name__)
@@ -10,8 +14,20 @@ app.config.from_object('config')
 socketio = SocketIO(app, async_mode='eventlet')
 oid = OpenID(app, 'tmp')
 
-conn = sqlite3.connect('game.db')
-c = conn.cursor()
+def login_user(url, nick):
+    def execute():
+        tls = threading.local()
+        if not hasattr(tls, 'connection'):
+            tls.connection = sqlite3.connect('game.db')
+        conn = tls.connection
+        c = conn.cursor()
+    
+        cursor = c.execute('SELECT id FROM users WHERE id=?', [url])
+        if cursor.fetchone() is None:
+            c.execute("INSERT INTO users VALUES(?, ?)", [url, nick])
+            conn.commit()
+
+    eventlet.tpool.execute(execute)
 
 
 @app.route('/top')
@@ -33,9 +49,9 @@ def lookup_current_user():
 
 @app.route('/login', methods=['GET', 'POST'])
 @oid.loginhandler
-def login():
+def login(): 
     if g.user is not None:
-        return redirect(oid.get_next_url())
+       return render_template('profile.html') 
     if request.method == 'POST':
         openid = request.form.get('openid')
         if openid:
@@ -50,8 +66,20 @@ def create_or_login(resp):
         c.execute("INSERT INTO users VALUES(?, ?)", [resp.identity_url, resp.nickname])
         conn.commit()   
     session['user_id'] = resp.identity_url    
-    return redirect('static/profile.html')
+    return render_template('profile.html') 
 
+@app.route('/profile')
+def profile():
+   return render_template('profile.html')
+@app.route('/logout')
+def logout():
+   session.pop('openid', None)
+   g.user=None
+   return render_template('login.html', next=oid.get_next_url(),
+                           error=oid.fetch_error())
+   
 
 if __name__ == '__main__':
+   conn = sqlite3.connect('game.db')
+   c = conn.cursor()
    app.run(debug=True)
