@@ -9,6 +9,11 @@
  *
  *      const descriptor = textureObject.desc['descriptor-id']; // Дескриптор спрайта
  *      const {left, top, right, bottom} = descriptor; // Текстурные координаты
+ *
+ *      // Это генерируется автоматически, и не указывается в list.json
+ *      const spriteTexture = rm.sprites['texture-id:descriptor-id']; // Текстура спрайта
+ *      const spriteImage = spriteTexture.img; // Изображение
+ *      const spriteDescriptor = spriteTexture.desc; // Дескриптор
  *  });
  *
  *  Пример файла list.json:
@@ -53,6 +58,7 @@ class ResourceManager {
         const that = this;
         this.textures = {};
         this.icons = {};
+        this.sprites = {};
 
         function loadTexture(name, src, descriptorSrc) {
             that.textures[name] = {img: null, desc: null};
@@ -111,7 +117,18 @@ class ResourceManager {
                         loadList.textures[idx].desc));
                 }
 
-                Promise.all(promiseList).then(callback);
+                Promise.all(promiseList).then(() => {
+                    for (const textureId in that.textures) {
+                        const texture = that.textures[textureId];
+                        for (const descriptorId in texture.desc) {
+                            that.sprites[textureId + ':' + descriptorId] = {
+                                img: texture.img,
+                                desc: texture.desc[descriptorId]
+                            }
+                        }
+                    }
+                    callback();
+                });
             }
         };
 
