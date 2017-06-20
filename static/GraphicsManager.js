@@ -1,11 +1,13 @@
 /**
  * Пример использования:
  *
+ *  const rm = new ResourceManager(); // Для взятия текстуры с дескриптором
+ *
  *  const gm = new GraphicsManager();
  *  const sprite = gm.createSprite(
  *      'static', // Тип спрайта, 'static', 'dynamic' или 'background'
  *      'my-sprite', // Идентификатор спрайта
- *      'units:knight', // Идентификатор текстуры спрайта
+ *      rm.sprites['units:knight'], // Описание спрайта
  *      { // Положение спрайта. По умолчанию -- ( 0 ; 0 )
  *          x: 150,
  *          y: 150
@@ -23,7 +25,11 @@
  *  // Много кода с добавлением и удалением спрайтов
  *
  *  for (const s of gm.getSpriteList('dynamic')) { // Если нужны только сами спрайты
- *      const texture = s.texture; // Идентификатор текстуры спрайта
+ *      const spriteDescriptor = s.spriteDescriptor; // Дескриптор спрайта
+ *      const image = descriptor.img; // Текстура, к которой принадлежит спрайт. Объект Image
+ *      const descriptor = spriteDescriptor.desc; // Дескриптор текстуры. Прямоугольник
+ *      const {left, top, right, bottom} = descriptor; // Текстурные координаты
+ *
  *      const position = s.position; // Положение
  *      const x = position.x; // Координата по оси X
  *      const y = position.y; // Координата по оси Y
@@ -52,9 +58,9 @@ class GraphicsManager {
         this.background = {};
     }
 
-    createSprite(type, id, spriteTexture, position = {x: 0, y: 0}, size = {x: 0, y: 0}) {
+    createSprite(type, id, spriteDescriptor, position = {x: 0, y: 0}, size = {x: 0, y: 0}) {
         return this[type][id] = {
-            spriteTexture: spriteTexture,
+            spriteDescriptor: spriteDescriptor,
             position: {
                 x: position.x,
                 y: position.y
