@@ -7,7 +7,7 @@
  *  const sprite = gm.createSprite(
  *      'static', // Тип спрайта, 'static', 'dynamic' или 'background'
  *      'my-sprite', // Идентификатор спрайта
- *      rm.sprites['units:knight'], // Описание спрайта
+ *      rm.sprites['units:knight'], // Любой аргумент, который вы хотите хранить под именем spriteDescriptor. В данном случае -- описание спрайта
  *      { // Положение спрайта. По умолчанию -- ( 0 ; 0 )
  *          x: 150,
  *          y: 150
@@ -25,10 +25,7 @@
  *  // Много кода с добавлением и удалением спрайтов
  *
  *  for (const s of gm.getSpriteList('dynamic')) { // Если нужны только сами спрайты
- *      const spriteDescriptor = s.spriteDescriptor; // Дескриптор спрайта
- *      const image = descriptor.img; // Текстура, к которой принадлежит спрайт. Объект Image
- *      const descriptor = spriteDescriptor.desc; // Дескриптор текстуры. Прямоугольник
- *      const {left, top, right, bottom} = descriptor; // Текстурные координаты
+ *      const spriteDescriptor = s.spriteDescriptor; // Аргумент, который был передан 3-м параметром
  *
  *      const position = s.position; // Положение
  *      const x = position.x; // Координата по оси X
