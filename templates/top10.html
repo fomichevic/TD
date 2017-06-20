@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+	<head charset="utf-8">
+		<title>TOP10</title>
+	</head>
+	<body>
+		<ul>
+		{% for nickname, score in raiting %}
+		<li>{{nickname|e }},{{score|e }}</li>
+		{% endfor %}
+		</ul>
+	</body>
+</html>
