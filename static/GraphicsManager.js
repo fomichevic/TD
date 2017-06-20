@@ -1,7 +1,7 @@
 /**
  * Пример использования:
  *
- *  const rm = new ResourceManager(); // Для взятия текстуры с дескриптором
+ *  // rm -- объект ResourceManager. Нужен для взятия описания спрайта
  *
  *  const gm = new GraphicsManager();
  *  const sprite = gm.createSprite(
