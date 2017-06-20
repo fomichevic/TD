@@ -1,7 +1,7 @@
 var canvas, gl, program, textureProgram, colorUniform, width, height, time, time_rad, u, pBuffer, tpBuffer, emptyBuffer;
 const square = new Float32Array([0,0,  1,0,  1,1,  
 								 1,1,  0,1,  0,0]);
-var image = loadImage('graphics/tower.png');
+var image = loadImage('atlas.png');
 var RegionsData;
 function getShader(id) {
 	var element = document.getElementById(id);
@@ -314,7 +314,7 @@ function init(){
 	height = 200;
 	time = 0;
 	var req = new XMLHttpRequest();
-	req.open("GET", "file:///C:/Users/hp/Documents/TD/static/atlas.txt", false);
+	req.open("GET", "http://127.0.0.1:5000/static/atlas.txt", false);
 	req.onreadystatechange = ()=>{
 		if (req.readyState == 4 && (req.status == 200 || req.status == 0))
 			RegionsData = JSON.parse(req.responseText);

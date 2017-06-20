@@ -1,12 +1,13 @@
 /**
  * Пример использования:
  *
+ *  // rm -- объект ResourceManager. Нужен для взятия описания спрайта
+ *
  *  const gm = new GraphicsManager();
  *  const sprite = gm.createSprite(
  *      'static', // Тип спрайта, 'static', 'dynamic' или 'background'
  *      'my-sprite', // Идентификатор спрайта
- *      'units', // Идентификатор текстуры
- *      'knight', // Идентификатор дескриптора
+ *      rm.sprites['units:knight'], // Любой аргумент, который вы хотите хранить под именем spriteDescriptor. В данном случае -- описание спрайта
  *      { // Положение спрайта. По умолчанию -- ( 0 ; 0 )
  *          x: 150,
  *          y: 150
@@ -24,8 +25,8 @@
  *  // Много кода с добавлением и удалением спрайтов
  *
  *  for (const s of gm.getSpriteList('dynamic')) { // Если нужны только сами спрайты
- *      const texture = s.texture; // Текстура
- *      const descriptor = s.descriptor; // Дескриптор
+ *      const spriteDescriptor = s.spriteDescriptor; // Аргумент, который был передан 3-м параметром
+ *
  *      const position = s.position; // Положение
  *      const x = position.x; // Координата по оси X
  *      const y = position.y; // Координата по оси Y
@@ -34,9 +35,6 @@
  *      const szy = size.y; // Размер по оси Y
  *
  *      // Любые поля спрайта можно менять:
- *      s.texture = 'units'; // Текстуру
- *      s.descriptor = 'knight'; // Дескриптор
- *
  *      s.position.x = 0; // Положение по оси X
  *      s.position.y = 0; // Положение по оси Y
  *      s.position = {x: 0, y: 0}; // Положение как вектор
@@ -50,7 +48,6 @@
  *      gm.dropSprite('dynamic', id); // Например, при их удалении
  *  }
  */
-
 class GraphicsManager {
     constructor() {
         this.static = {};
@@ -58,10 +55,9 @@ class GraphicsManager {
         this.background = {};
     }
 
-    createSprite(type, id, texture, descriptor, position = {x: 0, y: 0}, size = {x: 0, y: 0}) {
+    createSprite(type, id, spriteDescriptor, position = {x: 0, y: 0}, size = {x: 0, y: 0}) {
         return this[type][id] = {
-            texture: texture,
-            descriptor: descriptor,
+            spriteDescriptor: spriteDescriptor,
             position: {
                 x: position.x,
                 y: position.y

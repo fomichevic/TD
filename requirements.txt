@@ -8,11 +8,9 @@ eventlet==0.21.0
 Flask-SocketIO==2.8.6
 greenlet==0.4.12
 python-engineio==1.5.4
-python-engineio==1.5.4
 six==1.10.0
 Werkzeug==0.12.2
 defusedxml==0.5.0
 Flask-Login==0.4.0
 Flask-OpenID==1.2.5
 python3-openid==3.1.0
-
