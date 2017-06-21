@@ -16,6 +16,8 @@ clients = defaultdict(list)
 wait_room = None
 
 #Constants
+UPDATE_FULL = 5000
+UPDATE_DELTA = 100
 ANIM_FIST = [0.25, 0.5, 0.75]
 ANIM_BOW = [0.75]
 ANIM_SWORD = [0.25, 0.75]
@@ -221,6 +223,7 @@ class Game:
 		for user in users:
 			socketio.emit('update-delta', json, user.id)
 		del updates[:]
+		eventlet.sleep(UPDATE_DELTA)
 	
 	def toJSON(self):
 		str = '{"users":['
@@ -235,18 +238,36 @@ class Game:
 		del updates[:]
 		for user in users:
 			socketio.emit('update-full', toJSON(), user.id)
+		eventlet.sleep(UPDATE_FULL)
 	
 class GameManager:
-	games = None
+	games = {}
 	threads = {}
 	
 	def __init__(self):
-		games = {}
 		
-	def create(self, gID, id1, id2):
-		games[gID] = Game(gID, id1, id2, Timer.time() * 1000)
-		threads[gID] = eventlet.spawn(games[gID].update)
+	def create(self, id1, id2):
+		gID = uuid().int
+		while games[gID] is not None:
+			gID = uuid().int
+		games[gID] = Game(gID, id1, id2)
+		threads[gID] = [eventlet.spawn(games[gID].update), eventlet.spawn(games[gID].sendFullState), eventlet.spawn(games[gID].sendUpdate)]
 	
-	def update(self):
-		for game in games:
-			game.update(Timer.time() * 1000)
+	def winner(self, gID):
+		for user in games[gID].users:
+			if user.hp > 0:
+				return user.id
+		return None
+	
+	def stop(self, gID):
+		win = winner(gID)
+		lose = games[gID].other(win)
+		socketio.emit('win', '{}', win)
+		socketio.emit('lose', '{}', lose)
+		kill(gID)
+	
+	def kill(self, gID):
+		for thread in threads[gID]:
+			thread.kill()
+		del threads[gID]
+		del games[gID]
