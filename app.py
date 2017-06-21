@@ -1,23 +1,26 @@
 import eventlet
+
+eventlet.monkey_patch()
+
 from flask_socketio import SocketIO
 from flask import Flask, g, session, request, flash, render_template, redirect
 from flask_openid import OpenID
-import sqlite3
 from config import off
+from db import create_db, create_user, update_score, top10, return_nick
+
 
 app = Flask(__name__)
 app.config.from_object('config')
 socketio = SocketIO(app, async_mode='eventlet')
 oid = OpenID(app, 'tmp')
 
-conn = sqlite3.connect('game.db')
-c = conn.cursor()
-
 
 @app.route('/top')
 def top():
-   users = [('a', 'b'), ('b', 'c'), ('d', 'e')]
-   return render_template('top10.html', raiting=users)
+   if g.user is None:
+       return redirect('login')
+   
+   return render_template('top10.html', top10())
 
 @app.before_request
 def lookup_current_user():
@@ -25,17 +28,14 @@ def lookup_current_user():
     if off:
         g.user = 'superuser'
         return
-
     if 'user_id' in session:
         g.user = session['user_id']
 
-
-
 @app.route('/login', methods=['GET', 'POST'])
 @oid.loginhandler
-def login():
+def login(): 
     if g.user is not None:
-        return redirect(oid.get_next_url())
+        return redirect('profile') 
     if request.method == 'POST':
         openid = request.form.get('openid')
         if openid:
@@ -45,13 +45,23 @@ def login():
 
 @oid.after_login
 def create_or_login(resp): 
-    cursor = c.execute('SELECT id FROM users WHERE id=?', [resp.identity_url])
-    if cursor.fetchone() is None:
-        c.execute("INSERT INTO users VALUES(?, ?)", [resp.identity_url, resp.nickname])
-        conn.commit()   
+    create_user(resp.identity_url, resp.nickname)
     session['user_id'] = resp.identity_url    
-    return redirect('static/profile.html')
+    return render_template('profile.html') 
 
+@app.route('/profile')
+def profile():
+    if g.user is None:
+       return redirect('login') 
+    return render_template('profile.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    g.user = None
+    return redirect('login')
+   
 
 if __name__ == '__main__':
-   app.run(debug=True)
+    create_db()
+    app.run(debug=True)
