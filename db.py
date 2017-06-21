@@ -20,8 +20,13 @@ def update_score(uid, diff):
     tpool.execute(execute,'UPDATE users SET score=score+? WHERE id=?', [diff, uid])
 
 def top10():
-    return tpool.execute(execute,'SELECT nickname, result FROM results ORDER BY result DESC LIMIT 10', [])
+    return tpool.execute(execute,'SELECT nickname, score FROM users ORDER BY score DESC LIMIT 10', [])
 
 def create_user(uid, nick):
     if not tpool.execute(execute,'SELECT id FROM users WHERE id=? LIMIT 1', [uid]):
         tpool.execute(execute,'INSERT INTO users (id, nickname) VALUES(?, ?)', [uid, nick])
+
+def return_nick(uid):
+    return tpool.execute(execute,'SELECT nickname FROM users WHER id=? LIMIT 1',[uid])
+
+
