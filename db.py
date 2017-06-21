@@ -29,4 +29,7 @@ def create_user(uid, nick):
 def return_nick(uid):
     return tpool.execute(execute,'SELECT nickname FROM users WHER id=? LIMIT 1',[uid])
 
+def return_score(uid):
+    return tpool.execute(execute,'SELECT score FROM users WHER id=? LIMIT 1',[uid])
+
 
