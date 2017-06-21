@@ -313,28 +313,35 @@ function init(){
 	width = 200;
 	height = 200;
 	time = 0;
-	var req = new XMLHttpRequest();
-	req.open("GET", "http://127.0.0.1:5000/static/atlas.txt", false);
-	req.onreadystatechange = ()=>{
-		if (req.readyState == 4 && (req.status == 200 || req.status == 0))
-			RegionsData = JSON.parse(req.responseText);
-	}
-	req.send(null);
+	//var req = new XMLHttpRequest();
+	//req.open("GET", "http://127.0.0.1:5000/static/atlas.txt", false);
+	//req.onreadystatechange = ()=>{
+		//if (req.readyState == 4 && (req.status == 200 || req.status == 0))
+			//RegionsData = JSON.parse(req.responseText);
+	//}
+	//req.send(null);
 	requestAnimationFrame(function upd(){
 		requestAnimationFrame(upd);
-		time = (time + 3 * Math.PI / 180) % (2 * Math.PI);
+		time = (time + 20 * Math.PI / 180) % (2 * Math.PI);
 	});
+}
+
+function f(t){
+	if (Math.sign(t) >= 0)
+		return Math.sign(t);
+	return -Math.cos(t);
 }
 
 function main(){
 	init();
-	u = new unit(new vec2(5, 5));
+	//u = new unit(new vec2(5, 5));
 	requestAnimationFrame(function drawFrame(){
 		requestAnimationFrame(drawFrame);
 		clear();
 		drawGrid();
-		drawImage(image, new vec2(0, 0), new vec2(20, 20));
-		u.update();
-		u.draw();
+		//drawImage(image, new vec2(0, 0), new vec2(20, 20));
+		draw(regularPolygon(new vec2(110 + 10 * f(time - Math.PI), 100), 3, 10, 0), new rgba(0.5, 0.5, 0.5, 1));
+		//u.update();
+		//u.draw();
 	});
 }

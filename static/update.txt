@@ -1,0 +1,14 @@
+Game:{
+	"players": [<User>, ...]
+}
+User:{
+	"id": int,
+	"res": int,
+	"static", "dynamic": {"id": <Unit>, ...}
+}
+Unit:{
+	"position": {"x", "y": float},
+	"type": string,
+	//"state": string,
+	"hp": {"HP", "maxHP": int}
+}
