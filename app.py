@@ -61,7 +61,7 @@ def profile():
        return redirect('login') 
     nickname=return_nick(session['user_id'])
     score=return_score(session['user_id']) 
-    return render_template('profile.html', nickname, score)
+    return render_template('profile.html', nickname=nickname, score=score)
    
 @app.route('/logout')
 def logout():
