@@ -20,7 +20,8 @@ def top():
    if g.user is None:
        return redirect('login')
    
-   return render_template('top10.html', top10())
+   return render_template('top10.html', top10(),logout='logout', top='top', profile='profile'  )
+
 
 @app.before_request
 def lookup_current_user():
@@ -47,13 +48,13 @@ def login():
 def create_or_login(resp): 
     create_user(resp.identity_url, resp.nickname)
     session['user_id'] = resp.identity_url    
-    return render_template('profile.html') 
+    return render_template('profile.html',logout='logout', top='top', profile='profile'  )
 
 @app.route('/profile')
 def profile():
     if g.user is None:
-       return redirect('login') 
-    return render_template('profile.html')
+       return redirect('login')
+    return render_template('profile.html',logout='logout', top='top', profile='profile'  )  
 
 @app.route('/logout')
 def logout():
