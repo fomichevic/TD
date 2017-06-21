@@ -17,6 +17,9 @@ oid = OpenID(app, 'tmp')
 
 @app.route('/top')
 def top():
+   if g.user is None:
+       return redirect('login')
+   
    return render_template('top10.html', top10())
 
 @app.before_request
@@ -48,6 +51,8 @@ def create_or_login(resp):
 
 @app.route('/profile')
 def profile():
+    if g.user is None:
+       return redirect('login') 
     return render_template('profile.html')
 
 @app.route('/logout')
