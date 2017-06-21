@@ -6,7 +6,7 @@ from flask_socketio import SocketIO
 from flask import Flask, g, session, request, flash, render_template, redirect
 from flask_openid import OpenID
 from config import off
-from db import create_db, create_user, update_score, top10, return_nick
+from db import create_db, create_user, update_score, top10
 
 
 app = Flask(__name__)
@@ -20,7 +20,7 @@ def top():
    if g.user is None:
        return redirect('login')
    
-   return render_template('top10.html', top10(),logout='logout', top='top', profile='profile'  )
+   return render_template('top10.html', rating=enumerate(top10(), 1))
 
 
 @app.before_request
@@ -48,13 +48,13 @@ def login():
 def create_or_login(resp): 
     create_user(resp.identity_url, resp.nickname)
     session['user_id'] = resp.identity_url    
-    return render_template('profile.html',logout='logout', top='top', profile='profile'  )
+    return render_template('profile.html'  )
 
 @app.route('/profile')
 def profile():
     if g.user is None:
        return redirect('login')
-    return render_template('profile.html',logout='logout', top='top', profile='profile'  )  
+    return render_template('profile.html')  
 
 @app.route('/logout')
 def logout():

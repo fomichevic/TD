@@ -1,5 +1,6 @@
-<!DOCTYPE html>
-<html>
+
+{% extends "base.html"%}
+{% block content %}
 	<head charset="utf-8">
 		<title>TOP10</title>
 		<style>
@@ -21,7 +22,7 @@
 		<col class="col4">
  		<caption>TOP 10 PLAYERS</caption>
 		<tr>
-		{% for pos, user in enumerate(rating) %}
+		{% for pos, user in rating %}
 			<tr>
 			<th>{{pos}}</th><th><img src="image address"></th><th>{{user[0]|e}}</th><th>{{user[1]|e}}</th>
 			</tr> 
@@ -29,4 +30,4 @@
 		</tr>
 		</table> 
 	</body>
-</html>
+{% endblock %}
