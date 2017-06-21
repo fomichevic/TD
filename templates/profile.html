@@ -1,5 +1,26 @@
-<h2> Profile</h2>
-<b>{{nickname}}</b>
-<a href ="{{url_for('logout')}}">Logout</a>
+<!DOCTYPE html>
+<html>
+	<head charset="utf-8">
+		<title>Your profile</title>
+		<style>
+			.score {
+    			color: maroon
+			}
+    			p { font-size: 1.5em; }
+			h { font-size: 2em; }
+		</style>
+	</head>
+	<body>
+		<h>{{nickname|e}}</h>
+                <p><img src="image address"></p>
+		<p>Number of wins: <span class="score">{{score|e}}</span></p>
+	</body>
+</html>
+
+
+
+
+
+
 
 
