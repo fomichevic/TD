@@ -76,7 +76,7 @@ class Unit:
 		#self.state = STATE_GO
 		
 	def toJSON(self):
-		return '{"position":{"x":' + x + ',"y":' + y + '},"type":"' + type + '","state":"' + state + '","hp":{"HP":' + hp + ',"maxHP":' + maxHP + '}}'
+		return '{"position":{"x":' + x + ',"y":' + y + '},"type":"' + type + '","hp":{"HP":' + hp + ',"maxHP":' + maxHP + '}}'
 
 class Tower:
 	user = None
@@ -105,7 +105,7 @@ class Tower:
 		self.state = STATE_GO
 		
 	def toJSON(self):
-		return '{"position":{"x":' + x + ',"y":' + y + '},"type":"' + type + '","state":"' + state + '","hp":{"HP":' + hp + ',"maxHP":' + maxHP + '}}'
+		return '{"position":{"x":' + x + ',"y":' + y + '},"type":"' + type + '","hp":{"HP":' + hp + ',"maxHP":' + maxHP + '}}'
 		
 	def update(self, delta):
 		
@@ -149,13 +149,13 @@ class Game:
 	width = None
 	height = None
 	
-	def __init__(self, id, id1, id2, time):
+	def __init__(self, id, id1, id2):
 		self.id = id
 		users[id1] = User(self, id1, CASTLE_X)
 		users[id2] = User(self, id2, PLANE_WIDTH - CASTLE_X - 1)
 		width = PLANE_WIDTH
 		height = PLANE_WIDTH
-		self.time = time
+		self.time = Timer.time() * 1000
 		
 	def other(self, id):
 		u = []
@@ -166,9 +166,9 @@ class Game:
 		else:
 			return u[0].id
 	
-	def update(self, time):
-		delta = time - self.time
-		self.time = time
+	def update(self):
+		delta = Timer.time() * 1000 - time
+		time = time + delta
 		for unit in units:
 			unit.update(delta)
 		for user in users:
@@ -245,7 +245,7 @@ class GameManager:
 		
 	def create(self, gID, id1, id2):
 		games[gID] = Game(gID, id1, id2, Timer.time() * 1000)
-		threads[gID] = 
+		threads[gID] = eventlet.spawn(games[gID].update)
 	
 	def update(self):
 		for game in games:
