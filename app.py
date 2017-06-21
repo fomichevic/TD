@@ -6,7 +6,7 @@ from flask_socketio import SocketIO
 from flask import Flask, g, session, request, flash, render_template, redirect
 from flask_openid import OpenID
 from config import off
-from db import create_db, create_user, update_score, top10
+from db import create_db, create_user, update_score, top10, return_nick
 
 
 app = Flask(__name__)
