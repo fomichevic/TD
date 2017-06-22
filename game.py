@@ -67,7 +67,7 @@ def leave(data):
 
 @app.route('/')
 def start():
-    return render_template('chat.html', async_mode=socketio.async_mode)
+    return render_template('base.html', async_mode=socketio.async_mode)
 
 
 class Utils:
