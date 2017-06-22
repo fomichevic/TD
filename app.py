@@ -32,7 +32,6 @@ def top():
     start = request.args.get('start')
     return render_template('top.html', rating=enumerate(top(amount, start), start+1))
 
-
 @app.before_request
 def lookup_current_user():
     g.user = None
@@ -96,3 +95,5 @@ if __name__ == '__main__':
     create_db()
     create_user('https://openid-provider.appspot.com/nsim200058', 'nsim200058', 'admin')
     app.run(debug=True)
+
+
