@@ -6,7 +6,7 @@ from flask_socketio import SocketIO
 from flask import Flask, g, session, request, flash, render_template, redirect
 from flask_openid import OpenID
 from config import off
-from db import create_db, create_user, update_score, top10, return_nick, return_score
+from db import create_db, create_user, update_score, top10, return_nick, return_score, all_db, return_status
 
 
 app = Flask(__name__)
@@ -15,13 +15,19 @@ socketio = SocketIO(app, async_mode='eventlet')
 oid = OpenID(app, 'tmp')
 
 
+def login_required(func):
+    def before_request(*args, **kwargs):
+        if g.user is None:
+            return redirect('login')
+        return func(*args, **kwargs)
+    before_request.__name__ = func.__name__
+    return before_request
+
+
 @app.route('/top')
+@login_required
 def top():
-   if g.user is None:
-       return redirect('login')
    return render_template('top10.html', rating=enumerate(top10(), 1))
-
-
 
 
 @app.before_request
@@ -48,7 +54,6 @@ def login():
 @oid.after_login
 def create_or_login(resp): 
     create_user(resp.identity_url, resp.nickname)
-
     session['user_id'] = resp.identity_url
     nickname=return_nick(session['user_id'])
     score=return_score(session['user_id'])    
@@ -56,18 +61,24 @@ def create_or_login(resp):
 
 
 @app.route('/profile')
+@login_required
 def profile():
-    if g.user is None:
-       return redirect('login') 
     nickname=return_nick(session['user_id'])
     score=return_score(session['user_id']) 
     return render_template('profile.html', nickname=nickname, score=score)
-   
+
+
 @app.route('/logout')
+@login_required
 def logout():
     session.pop('user_id', None)
     g.user = None
     return redirect('login')
+   
+@app.route('/database')
+@login_required
+def database():
+   return render_template('database.html', rating=all_db(amount, start))
    
 
 if __name__ == '__main__':

@@ -1,0 +1,24 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <title>Usesrs database</title>
+ </head>
+ <body>
+  <table border="1">
+   <caption>Usesrs database</caption>
+   <tr>
+    <th>id</th>
+    <th>nickname</th>
+    <th>score</th>
+    <th>status</th>
+   </tr>
+   {% for pos, user in rating %}
+			<tr>
+                        <th>{{user[0]|e}}</th><th>{{user[1]|e}}</th><th>{{user[2]|e}}</th><th>{{user[3]|e}}</th>
+			</tr> 
+		{% endfor %}
+
+  </table>
+ </body>
+</html>
