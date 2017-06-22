@@ -47,13 +47,13 @@ class Sprite {
 
     get textureCoords() {
         return new Float32Array([
-            this.descriptor.left, this.descriptor.bottom,
-            this.descriptor.left, this.descriptor.top,
-            this.descriptor.right, this.descriptor.top,
+            this.descriptor.desc.left,  this.descriptor.desc.bottom,
+            this.descriptor.desc.left,  this.descriptor.desc.top,
+            this.descriptor.desc.right, this.descriptor.desc.top,
 
-            this.descriptor.left, this.descriptor.bottom,
-            this.descriptor.right, this.descriptor.bottom,
-            this.descriptor.right, this.descriptor.top,
+            this.descriptor.desc.left,  this.descriptor.desc.bottom,
+            this.descriptor.desc.right, this.descriptor.desc.bottom,
+            this.descriptor.desc.right, this.descriptor.desc.top,
         ]);
     }
 }
