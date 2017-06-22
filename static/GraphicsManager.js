@@ -48,21 +48,94 @@
  * Документация по спрайтам перенесена к соответствующему классу
  */
 class GraphicsManager {
-    constructor() {
+    constructor(gl) {
+        this.gl = gl;
         this.static = {};
         this.dynamic = {};
         this.background = {};
     }
 
     createSprite(type, id, spriteDescriptor, position, size) {
+        const gm = this;
+
+        class Sprite {
+            constructor(descriptor, x = 0, y = 0, w = 0, h = 0) {
+                this.descriptor = descriptor;
+
+                class Vector {
+                    constructor(x, y) {
+                        this._x = x;
+                        this._y = y;
+                    }
+
+                    get x() {
+                        return this._x;
+                    }
+
+                    get y() {
+                        return this._y;
+                    }
+
+                    set x(val) {
+                        this._x = val;
+                        sprite.updatePointVerticeBuffer();
+                    }
+
+                    set y(val) {
+                        this._y = val;
+                        sprite.updatePointVerticeBuffer();
+                    }
+                }
+
+                this._position = new Vector(x, y);
+                this._size = new Vector(w, h);
+
+                const sprite = this;
+                this.pointBuffer = gm.gl.createBuffer();
+                this.updatePointVerticeBuffer();
+
+                this.textureBuffer = gm.gl.createBuffer();
+                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
+                gm.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                    this.descriptor.desc.left,  this.descriptor.desc.bottom,
+                    this.descriptor.desc.left,  this.descriptor.desc.top,
+                    this.descriptor.desc.right, this.descriptor.desc.top,
+
+                    this.descriptor.desc.left,  this.descriptor.desc.bottom,
+                    this.descriptor.desc.right, this.descriptor.desc.bottom,
+                    this.descriptor.desc.right, this.descriptor.desc.top,
+                ]), gm.gl.STATIC_DRAW);
+            }
+
+            get position() {
+                return this._position;
+            }
+
+            get size() {
+                return this._size;
+            }
+
+            updatePointVerticeBuffer() {
+                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this.pointBuffer);
+                gm.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                    this.position.x,               this.position.y + this.size.y,
+                    this.position.x,               this.position.y,
+                    this.position.x + this.size.x, this.position.y,
+
+                    this.position.x,               this.position.y + this.size.y,
+                    this.position.x + this.size.x, this.position.y + this.size.y,
+                    this.position.x + this.size.x, this.position.y,
+                ]), gm.gl.STATIC_DRAW);
+            }
+        }
+
         return this[type][id] = new Sprite(spriteDescriptor, position, size);
     }
 
-    registerSprite(type, id, sprite) {
-        return this[type][id] = sprite;
-    }
-
     dropSprite(type, id) {
+        const sprite = this[type][id];
+        this.gl.deleteBuffer(sprite.pointBuffer);
+        this.gl.deleteBuffer(sprite.textureBuffer);
         delete this[type][id];
     }
 
