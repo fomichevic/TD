@@ -35,13 +35,13 @@ class Sprite {
 
     get vertexCoords() {
         return new Float32Array([
-            this.position.x,               this.position.y,
             this.position.x,               this.position.y + this.size.y,
-            this.position.x + this.size.x, this.position.y + this.size.y,
-
             this.position.x,               this.position.y,
             this.position.x + this.size.x, this.position.y,
+
+            this.position.x,               this.position.y + this.size.y,
             this.position.x + this.size.x, this.position.y + this.size.y,
+            this.position.x + this.size.x, this.position.y,
         ]);
     }
 
