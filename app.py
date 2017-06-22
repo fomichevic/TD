@@ -6,7 +6,7 @@ from flask_socketio import SocketIO
 from flask import Flask, g, session, request, flash, render_template, redirect
 from flask_openid import OpenID
 from config import off
-from db import create_db, create_user, update_score, top10, return_nick, return_score
+from db import create_db, create_user, update_score, top10, return_nick, return_score, all_db
 
 
 app = Flask(__name__)
@@ -61,7 +61,7 @@ def profile():
        return redirect('login') 
     nickname=return_nick(session['user_id'])
     score=return_score(session['user_id']) 
-    return render_template('profile.html', nickname, score)
+    return render_template('profile.html', nickname=nickname, score=score)
    
 @app.route('/logout')
 def logout():
@@ -71,5 +71,6 @@ def logout():
    
 
 if __name__ == '__main__':
-    create_db()
+    admins=[['id'],['nick']]
+    create_db(admins)
     app.run(debug=True)

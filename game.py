@@ -4,6 +4,7 @@ from collections import defaultdict
 from uuid import uuid4 as uuid
 import time as Timer
 import eventlet
+import json
 
 eventlet.monkey_patch()
 app = Flask(__name__)
@@ -23,32 +24,49 @@ ANIM_SWORD = [0.25, 0.75]
 CASTLE_X = 1
 PLANE_HEIGHT = 10
 PLANE_WIDTH = 10
-PRICE_BOW = 35
-PRICE_FIST = 20
-PRICE_SWORD = 40
-PRICE_SINGLE = 100
-PRICE_AREA = 140
 #PRICE_PSY = 200
 RESOURCES_PER_SECOND = 40
 STATE_ATTACK = 'ATTACK'
 STATE_DIE = 'DIE'
 STATE_GO = 'GO'
-TOWER_SINGLE = Template('single', 50, 10, 5, 100)
-TOWER_AREA = Template('area', 30, 15, 8, 200)
 #TOWER_PSY = Template('psy', 20, 15, 9, 150)
 UNIT_SPEED = 0.5
-UNIT_FIST = Template('fist', 40, 5, 1, 50)
-UNIT_BOW = Template('bow', 30, 10, 6, 150)
-UNIT_SWORD = Template('sword', 50, 15, 1.5, 100)
 USER_HP = 500
 
+TEMPLATES = {'single': Template('single', 100, 50, 10, 5, 100), 
+			 'area': Template('area', 140, 30, 15, 8, 200), 
+			 'fist': Template('fist', 20, 40, 5, 1, 50), 
+			 'bow': Template('bow', 35, 30, 10, 6, 150), 
+			 'sword': Template('sword', 40, 50, 15, 1.5, 100)}
+
+@socketio.on('buy')
+def buy(data):
+	GameManager.players[request.sid].buy(data)
+	
+@socketio.on('sell')
+def sell(data):
+	GameManager.players[request.sid].sell(data)
+	
+@socketio.on('join')
+def join(data):
+	GameManager.join(request.sid)
+	
+@socketio.on('leave')
+def leave(data):
+	GameManager.leave(request.sid)
+
 class Utils:
-	def min(*args):
-		
+	def min_by_val(**kwargs):
+		result = None
+		for key in kwargs:
+			if not result or (kwargs[key] and kwargs[result] < kwargs[key])
+				result = key
+		return result
 
 class Template:
-	def __init__(self, type, hp, dmg, range, time):
+	def __init__(self, type, price, hp, dmg, range, time):
 		self.type = template.type
+		self.price = price
 		self.hp = template.hp
 		self.dmg = template.dmg
 		self.range = template.range
@@ -70,12 +88,6 @@ class Unit:
 		
 	def toJSON(self):
 		return '{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"' + self.type + '","hp":{"HP":' + self.hp + ',"maxHP":' + self.maxHP + '}}'
-		
-	def update(self):
-		delta = Timer.time() * 1000 - self.time
-		self.time = self.time + delta
-		u = self.user.game.findNearestUnit()
-		
 
 class Tower:
 	def __init__(self, user, x, y, template):
@@ -95,7 +107,6 @@ class Tower:
 		return '{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"' + self.type + '","hp":{"HP":' + self.hp + ',"maxHP":' + self.maxHP + '}}'
 		
 	def update(self, delta):
-		
 
 class User:
 	def __init__(self, game, id, castle_x):
@@ -109,17 +120,41 @@ class User:
 		
 	def update(self, delta):
 		self.resources = self.resources + RESOURCES_PER_SECOND * delta / 1000
-		
+	
+	def buyUnit(self, template):
+		if self.resources < template.price:
+			return
+		self.game.units.append(Unit(self, self.x, self.y, template))
+		self.resources = self.resources - template.price
+		self.game.addToUpdate('{"type":"add","x":' + self.x + ',"y":' + self.y + ',"type":' + template.type + '}')
+	
+	def buyTower(self, x, y, template):
+		if self.resources < template.price or self.game.plane[(x, y)]:
+			return
+		self.game.plane[(x, y)] = Tower(self, x, y, template)
+		self.towers.append(self.game.plane[(x, y)])
+		self.resources = self.resources - template.price
+		self.game.addToUpdate('{"type":"add","x":' + x + ',"y":' + y + ',"type":' + template.type + '}')
+	
+	def buy(self, str):
+		global TEMPLATES
+		data = json.loads(str)
+		if data and data.type:
+			if data.type in ['fist', 'bow', 'sword']:
+				self.buyUnit(TEMPLATES[data.type])
+			elif data.type in ['single', 'area']:
+				self.buyTower(data.x, data.y, TEMPLATES[data.type])
+
 	def toJSON(self):
 		str = '{"id":' + self.id + ',"res":' + self.resources + ',"static":['
 		for tower in self.towers:
 			str = str + tower.toJSON() + ','
-		str = str + '],"dynamic":['
+		str = str + '{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"castle","hp":{"HP":' + self.hp + ',"maxHP":' + USER_HP + '}}],"dynamic":['
 		for unit in self.game.units:
 			if unit.id == id:
 				str = str + unit.toJSON() + ','
-		return str + '],"castle":{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"castle","hp":{"HP":' + self.hp + ',"maxHP":' + USER_HP + '}}}'
-		
+		return str + ']}'
+	
 class Game:
 	def __init__(self, id, id1, id2):
 		self.id = id
@@ -186,6 +221,12 @@ class Game:
 				queue.append((pos[0], pos[1] - 1))
 		return None
 	
+	def nearestPoint(self, x, y):
+		return (int(round(x)), int(round(y)))
+	
+	def nearestPointTo(self, targetX, targetY, x, y):
+		return (int(round(x + sign(targetX - x))), int(round(y + sign(targetY - y))))
+	
 	def path(self, x1, y1, x2, y2):
 		queue = [(x1, y1)]
 		temp = []
@@ -195,22 +236,27 @@ class Game:
 			queue.remove(pos)
 			if pos == (x2, y2):
 				break
-			elif pos in temp:
+			elif self.plane[pos]:
 				continue
 			else:
 				temp.append(pos)
 				if not pos in num:
-					n = None
-					if (pos[0] + 1, pos[1]) in temp:
-						n = num[(pos[0] + 1, pos[1])]
-					if (pos[0], pos[1] + 1) in temp:
-						n = 
-					if (pos[0] - 1, pos[1]) in temp:
-						
-					if (pos[0], pos[1] - 1) in temp:
-						
-				
-	
+					num[pos] = num[Utils.min_by_val({(pos[0] + 1, pos[1]): num[(pos[0] + 1, pos[1])], (pos[0], pos[1] + 1): num[(pos[0], pos[1] + 1)], (pos[0] - 1, pos[1]): num[(pos[0] - 1, pos[1])], (pos[0], pos[1] - 1): num[(pos[0], pos[1] - 1)]})] + 1
+				if pos[0] < width - 1 and not (pos[0] + 1, pos[1]) in temp:
+					queue.append((pos[0] + 1, pos[1]))
+				if pos[0] > 0 and not (pos[0] - 1, pos[1]) in temp:
+					queue.append((pos[0] - 1, pos[1]))
+				if pos[1] < height - 1 and not (pos[0], pos[1] + 1) in temp:
+					queue.append((pos[0], pos[1] + 1))
+				if pos[1] > 0 and not (pos[0], pos[1] - 1) in temp:
+					queue.append((pos[0], pos[1] - 1))
+		data = []#insert(0, pos)
+		pos = (x2, y2)
+		while not pos == (x1, y1):
+			pos = Utils.min_by_val({(pos[0] + 1, pos[1]): num[(pos[0] + 1, pos[1])], (pos[0], pos[1] + 1): num[(pos[0], pos[1] + 1)], (pos[0] - 1, pos[1]): num[(pos[0] - 1, pos[1])], (pos[0], pos[1] - 1): num[(pos[0], pos[1] - 1)]})
+			data.insert(0, pos)
+		return data
+		
 	def winner(self):
 		for user in self.users:
 			if user.hp <= 0:
@@ -228,8 +274,7 @@ class Game:
 		
 	def sendUpdate(self):
 		json = self.deltasToJSON()
-		for user in self.users:
-			socketio.emit('update-delta', json, user.id)
+		socketio.emit('update-delta', json, room = gID)
 		del self.updates[:]
 		eventlet.sleep(UPDATE_DELTA)
 	
@@ -241,30 +286,53 @@ class Game:
 	
 	def sendFullState(self):
 		del self.updates[:]
-		for user in self.users:
-			socketio.emit('update-full', self.toJSON(), user.id)
+		socketio.emit('update-full', self.toJSON(), room = gID)
 		eventlet.sleep(UPDATE_FULL)
 	
 class GameManager:
 	games = {}
 	threads = {}
-
+	players = {}
+	waiting = None
+	
+	def killAll(): # Do not use!
+		for key in games.keys:
+			kill(key)
+	
 	def start(id1, id2):
 		gID = uuid().int
 		while games[gID]:
 			gID = uuid().int
+		join_room(gID, id1)
+		join_room(gID, id2)
 		games[gID] = Game(gID, id1, id2)
+		players.update(games[gID].users)
 		threads[gID] = [eventlet.spawn(games[gID].update), eventlet.spawn(games[gID].sendFullState), eventlet.spawn(games[gID].sendUpdate)]
 	
 	def stop(gID):
-		win = winner(gID)
-		lose = games[gID].other(win)
-		socketio.emit('win', '{}', win)
-		socketio.emit('lose', '{}', lose)
+		win = games[gID].winner()
+		socketio.emit('end', '{"winner"=' + win + '}', room = gID)
 		kill(gID)
 	
 	def kill(gID):
+		for id in games[gID].users.keys():
+			leave_room(gID, sid = id)
+			players.pop(id, None)
+		close_room(gID)
 		for thread in threads[gID]:
 			thread.kill()
 		del threads[gID]
 		del games[gID]
+		
+	def join(id):
+		if waiting == None:
+			waiting = id
+		else:
+			start(waiting, id)
+			waiting = None
+	
+	def leave(id):
+		socketio.emit('end', '{"winner"=' + games[players[id].game.id].other(id) + '}', room = players[id].game.id)
+		kill(players[id].game.id)
+		
+	
