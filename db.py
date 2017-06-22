@@ -26,11 +26,11 @@ def create_user(uid, nick, status):
     if not tpool.execute(execute,'SELECT id FROM users WHERE id=? LIMIT 1', [uid]):
         tpool.execute(execute,'INSERT INTO users (id, nickname, status) VALUES(?, ?, ?)', [uid, nick, status])
 
-def return_inf(uid):
-    return tpool.execute(execute,'SELECT id, nickname, score, status FROM users WHERE id=? LIMIT 1', [uid])
+def find_user(uid):
+    return tpool.execute(execute,'SELECT id, nickname, score, status FROM users WHERE id=? LIMIT 1', [uid])[0]
 
-def return_status(uid):
-    return tpool.execute(execute,'SELECT status FROM users WHERE id=? LIMIT 1', [uid])
+def user_status(uid):
+    return find_user(uid)[3]
 
 def all_db(amount, start):
     return tpool.execute(execute,'SELECT id, nickname, score, status FROM users LIMIT ? OFFSET ?', [amount, start])

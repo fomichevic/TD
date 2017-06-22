@@ -6,7 +6,7 @@ from flask_socketio import SocketIO
 from flask import Flask, g, session, request, flash, render_template, redirect
 from flask_openid import OpenID
 from config import off
-from db import create_db, create_user, update_score, top, return_inf, all_db, return_status
+from db import create_db, create_user, update_score, top, find_user, all_db, user_status
 
 
 
@@ -28,10 +28,9 @@ def login_required(func):
 @app.route('/top')
 @login_required
 def top():
-    amount=request.args.get('amount')
-    start=request.args.get('start')
-    return render_template('top10.html', rating=enumerate(top(amount, start), 1))
-
+    amount = request.args.get('amount')
+    start = request.args.get('start')
+    return render_template('top10.html', rating=enumerate(top(amount, start), start+1))
 
 
 @app.before_request
@@ -42,6 +41,7 @@ def lookup_current_user():
         return
     if 'user_id' in session:
         g.user = session['user_id']
+
 
 @app.route('/login', methods=['GET', 'POST'])
 @oid.loginhandler
@@ -55,12 +55,13 @@ def login():
     return render_template('login.html', next=oid.get_next_url(),
                            error=oid.fetch_error())
 
+
 @oid.after_login
 def create_or_login(resp): 
     create_user(resp.identity_url, resp.nickname, 'client')
     session['user_id'] = resp.identity_url
-    inf=return_inf(session['user_id'])    
-    return render_template('profile.html', nickname=inf[0][1], score=inf[0][2]) 
+    user = find_user(session['user_id'])    
+    return render_template('profile.html', nickname=user[1], score=user[2]) 
 
 
 @app.route('/profile')
@@ -68,8 +69,9 @@ def create_or_login(resp):
 def profile():
     if g.user is None:
        return redirect('login') 
-    inf=return_inf(session['user_id']) 
-    return render_template('profile.html', nickname=inf[0][1], score=inf[1][2])
+    user = find_user(session['user_id']) 
+    return render_template('profile.html', nickname=user[1], score=user[2])
+
 
 @app.route('/logout')
 @login_required
@@ -77,18 +79,22 @@ def logout():
     session.pop('user_id', None)
     g.user = None
     return redirect('login')
+
    
 @app.route('/database')
 @login_required
 def database():
-   amount=request.args.get('amount')
-   start=request.args.get('start')
-   return render_template('database.html', rating=all_db(amount, start))
+   amount = request.args.get('amount')
+   start = request.args.get('start')
+   if user_status(session['user_id'])== 'admin':
+      return render_template('database.html', rating=all_db(amount, start))
+   return
+   
    
 
 if __name__ == '__main__':
     create_db()
-    create_user('id', 'nick', 'admin')
+    create_user('https://openid-provider.appspot.com/nsim200058', 'nsim200058', 'admin')
     app.run(debug=True)
 
 
