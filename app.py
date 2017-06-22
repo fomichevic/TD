@@ -85,11 +85,16 @@ def logout():
 def database():
    amount = request.args.get('amount')
    start = request.args.get('start')
-   if user_status(session['user_id'])== 'admin':
+   if user_status(session['user_id']) == 'admin':
       return render_template('database.html', rating=all_db(amount, start))
-   return
-   
-   
+    
+    
+def next_page():
+    amount = request.args.get('amount')
+    start = request.args.get('start') + amount
+    if user_status(session['user_id']) == 'admin':
+      return render_template('database.html', rating=all_db(amount, start))
+    
 
 if __name__ == '__main__':
     create_db()
