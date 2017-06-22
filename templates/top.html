@@ -1,0 +1,32 @@
+{% extends "base.html"%}
+{% block content %}
+	<head charset="utf-8">
+		<title>TOP10</title>
+		<style>
+		table {
+			table-layout: fixed; 
+			width: 50%; 
+		}
+		.col1 { width: 10px; }
+		.col2 { width: 30px; }
+		.col3 { width: 100px; }
+		.col4 { width: 30px; }
+		</style>
+	</head>
+	<body>
+		<table border="3">
+		<col class="col1">
+		<col class="col2">
+		<col class="col3">
+		<col class="col4">
+ 		<caption>TOP 10 PLAYERS</caption>
+		<tr>
+		{% for pos, user in rating %}
+			<tr>
+			<th>{{pos}}</th><th><img src="image address"></th><th>{{user[0]|e}}</th><th>{{user[1]|e}}</th>
+			</tr> 
+		{% endfor %}
+		</tr>
+		</table> 
+	</body>
+{% endblock %}
