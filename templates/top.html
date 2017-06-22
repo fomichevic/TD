@@ -1,5 +1,6 @@
 {% extends "base.html"%}
 {% block content %}
+<a href ="{{url_for('next_page')}}">Next</a>
 	<head charset="utf-8">
 		<title>TOP10</title>
 		<style>
@@ -27,6 +28,6 @@
 			</tr> 
 		{% endfor %}
 		</tr>
-		</table> 
+		</table>
 	</body>
 {% endblock %}
