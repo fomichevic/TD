@@ -13,26 +13,24 @@ def execute(query, args):
     conn.commit()
     return ans
 
-def create_db(admins):
-    tpool.execute(execute,'CREATE TABLE IF NOT EXISTS users (id TEXT primary key, nickname TEXT not null, score INTEGER default 0, status TEXT, CHECK (status in("admin","client"))', [])
-    for i in len(admins[0]):
-        tpool.execute(execute,'INSERT INTO users(id, nickname,status) VALUES(?, ?,admin)', [admins[0][i], admins[1][i]])
+def create_db():
+    tpool.execute(execute,'CREATE TABLE IF NOT EXISTS users (id TEXT primary key, nickname TEXT not null, score INTEGER default 0, status TEXT, CHECK (status in("admin", "client")))', [])
 
 def update_score(uid, diff):
     tpool.execute(execute,'UPDATE users SET score=score+? WHERE id=?', [diff, uid])
 
-def top10():
-    return tpool.execute(execute,'SELECT nickname, score FROM users ORDER BY score DESC LIMIT 10', [])
+def top(amount, start):
+    return tpool.execute(execute,'SELECT nickname, score FROM users ORDER BY score DESC LIMIT ? OFFSET ?', [amount, start])
 
-def create_user(uid, nick):
+def create_user(uid, nick, status):
     if not tpool.execute(execute,'SELECT id FROM users WHERE id=? LIMIT 1', [uid]):
-        tpool.execute(execute,'INSERT INTO users (id, nickname,status) VALUES(?, ?,client)', [uid, nick])
+        tpool.execute(execute,'INSERT INTO users (id, nickname, status) VALUES(?, ?, ?)', [uid, nick, status])
 
-def return_nick(uid):
-    return tpool.execute(execute,'SELECT nickname FROM users WHERE id=? LIMIT 1',[uid])
+def return_nick_score(uid):
+    return tpool.execute(execute,'SELECT nickname, score FROM users WHERE id=? LIMIT 1', [uid])
 
-def return_score(uid):
-    return tpool.execute(execute,'SELECT score FROM users WHERE id=? LIMIT 1',[uid])
+def return_status(uid):
+    return tpool.execute(execute,'SELECT status FROM users WHERE id=? LIMIT 1', [uid])
 
-def all_db():
-    return tpool.execute(execute,'SELECT id, nickname, score, status FROM users',[])
+def all_db(amount, start):
+    return tpool.execute(execute,'SELECT id, nickname, score, status FROM users LIMIT ? OFFSET ?', [amount, start])
