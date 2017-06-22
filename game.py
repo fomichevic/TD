@@ -14,6 +14,15 @@ coroutine = {}
 clients = defaultdict(list)
 wait_room = None
 
+class Template:
+	def __init__(self, type, price, hp, dmg, range, time):
+		self.type = type
+		self.price = price
+		self.hp = hp
+		self.dmg = dmg
+		self.range = range
+		self.time = time
+
 #Constants
 UPDATE_FULL = 5000
 UPDATE_DELTA = 100
@@ -22,6 +31,7 @@ ANIM_FIST = [0.25, 0.5, 0.75]
 ANIM_BOW = [0.75]
 ANIM_SWORD = [0.25, 0.75]
 CASTLE_X = 1
+MINIMAL_RANGE = 0.1
 PLANE_HEIGHT = 10
 PLANE_WIDTH = 10
 #PRICE_PSY = 200
@@ -55,22 +65,18 @@ def join(data):
 def leave(data):
 	GameManager.leave(request.sid)
 
+@app.route('/')
+def start():
+    return render_template('chat.html', async_mode=socketio.async_mode)
+
+
 class Utils:
 	def min_by_val(**kwargs):
 		result = None
 		for key in kwargs:
-			if not result or (kwargs[key] and kwargs[result] < kwargs[key])
+			if not result or (kwargs[key]) and (kwargs[result] < kwargs[key]):
 				result = key
 		return result
-
-class Template:
-	def __init__(self, type, price, hp, dmg, range, time):
-		self.type = template.type
-		self.price = price
-		self.hp = template.hp
-		self.dmg = template.dmg
-		self.range = template.range
-		self.time = time
 
 class Unit:
 	def __init__(self, user, x, y, template):
@@ -82,13 +88,49 @@ class Unit:
 		self.maxHP = self.HP
 		self.dmg = template.dmg
 		self.range = template.range
-		self.timeout = time
-		self.time = time
+		self.timeout = template.time
+		self.timer = template.time
+		self.time = int(Timer.time() * 1000)
+		id = uuid().int
+		while id in self.user.game.usedID:
+			id = uuid().int
+		self.id = id
+		self.user.game.usedID.append(id)
 		#self.state = STATE_GO
-		
+		self.path = []
+		self.target = None
+	
 	def toJSON(self):
-		return '{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"' + self.type + '","hp":{"HP":' + self.hp + ',"maxHP":' + self.maxHP + '}}'
+		return self.id + ':{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"' + self.type + '","hp":{"HP":' + self.hp + ',"maxHP":' + self.maxHP + '}}'
 
+	def move(self, dX, dY):
+		global UNIT_SPEED
+		self.x = self.x + (dX / math.sqrt(dX ** 2 + dY ** 2)) * UNIT_SPEED
+		self.y = self.y + (dY / math.sqrt(dX ** 2 + dY ** 2)) * UNIT_SPEED
+	
+	def update(self):
+		global MINIMAL_RANGE
+		if self.hp <= 0:
+			self.user.units.remove(self)
+			self.user.game.addToUpdate('{"type":"remove","id":' + self.id + '}')
+			del self
+		else:
+			delta = int(Timer.time() * 1000) - self.time
+			self.time = self.time + delta
+			self.timer = self.timer - delta
+			target = self.user.game.findNearestUnit(self.x, self.y, self.user.game.other(self.user.id))
+			if math.sqrt((self.x - target.x) ** 2 + (self.y - target.y) ** 2) <= range:
+				if self.timer <= 0:
+					target.hp = target.hp - self.dmg
+					self.timer = selt.timeout
+			else:
+				if not path:
+					path = self.user.game.path(self.user.game.nearestPoint(target.x, target.y, self.x, self.y), self.user.game.nearestPointTo(target.x, target.y, self.x, self.y, self.range))
+				if math.sqrt((self.x - path[0][0]) ** 2, (self.y - path[0][1]) ** 2) <= MINIMAL_RANGE:
+					path.pop(0, None)
+				if path:
+					self.move(path[0][0] - self.x, path[0][1] - self.y)
+	
 class Tower:
 	def __init__(self, user, x, y, template):
 		self.user = user
@@ -100,13 +142,33 @@ class Tower:
 		self.dmg = template.dmg
 		self.range = template.range
 		self.timeout = time
+		self.timer = time
 		self.time = time
-		self.state = STATE_GO
+		#self.state = STATE_GO
+		id = uuid().int
+		while id in self.user.game.usedID:
+			id = uuid().int
+		self.id = id
+		self.user.game.usedID.append(id)
 		
 	def toJSON(self):
-		return '{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"' + self.type + '","hp":{"HP":' + self.hp + ',"maxHP":' + self.maxHP + '}}'
-		
-	def update(self, delta):
+		return self.id + ':{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"' + self.type + '","hp":{"HP":' + self.hp + ',"maxHP":' + self.maxHP + '}}'
+	
+	def update(self):
+		if self.hp <= 0:
+			del self.game.plane[(self.x, self.y)]
+			self.user.game.addToUpdate('{"type":"remove","id":' + self.id + '}')
+			self.user.towers.remove(self)
+			del self
+		else:
+			delta = int(Timer.time() * 1000) - self.time
+			self.time = self.time + delta
+			self.timer = self.timer - delta
+			if self.timer <= 0:
+				target = self.user.game.findNearestUnit(self.x, self.y, self.user.game.other(self.user.id))
+				if math.sqrt((self.x - target.x) ** 2 + (self.y - target.y) ** 2) <= range:
+					target.hp = target.hp - self.dmg
+				self.timer = self.timeout
 
 class User:
 	def __init__(self, game, id, castle_x):
@@ -118,7 +180,7 @@ class User:
 		self.hp = USER_HP
 		self.towers = []
 		
-	def update(self, delta):
+	def update(self):
 		self.resources = self.resources + RESOURCES_PER_SECOND * delta / 1000
 	
 	def buyUnit(self, template):
@@ -144,18 +206,32 @@ class User:
 				self.buyUnit(TEMPLATES[data.type])
 			elif data.type in ['single', 'area']:
 				self.buyTower(data.x, data.y, TEMPLATES[data.type])
-
+	
+	def sell(self, str):
+		global TEMPLATES
+		data = json.loads(str)
+		if not self.game.plane[(data.x, data.y)]:
+			return
+		self.resources = self.resources + TEMPLATES[self.game.plane[(data.x, data.y)].type].price / 2
+		del self.game.plane[(data.x, data.y)]
+		for tower in self.towers:
+			if tower.x == data.x and tower.y == data.y:
+				self.towers.remove(tower)
+				break
+		self.game.addToUpdate('{"type":"remove","id":' + self.id + '}')
+	
 	def toJSON(self):
-		str = '{"id":' + self.id + ',"res":' + self.resources + ',"static":['
+		str = '{"id":' + self.id + ',"res":' + self.resources + ',"static":{'
 		for tower in self.towers:
 			str = str + tower.toJSON() + ','
-		str = str + '{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"castle","hp":{"HP":' + self.hp + ',"maxHP":' + USER_HP + '}}],"dynamic":['
+		str = str + '"castle":{"position":{"x":' + self.x + ',"y":' + self.y + '},"type":"castle","hp":{"HP":' + self.hp + ',"maxHP":' + USER_HP + '}}},"dynamic":{'
 		for unit in self.game.units:
 			if unit.id == id:
 				str = str + unit.toJSON() + ','
-		return str + ']}'
+		return str + '}}'
 	
 class Game:
+	usedID = []
 	def __init__(self, id, id1, id2):
 		self.id = id
 		self.users = {}
@@ -163,14 +239,14 @@ class Game:
 		self.users[id2] = User(self, id2, PLANE_WIDTH - CASTLE_X - 1)
 		self.width = PLANE_WIDTH
 		self.height = PLANE_WIDTH
-		self.time = Timer.time() * 1000
+		self.time = int(Timer.time() * 1000)
 		self.units = []
 		self.updates = []
 		self.plane = {}
-		
+	
 	def other(self, id):
 		u = []
-		for user in self.users:
+		for user in self.users.values():
 			u.append(user)
 		if u[0].id == id:
 			return u[1].id
@@ -178,11 +254,11 @@ class Game:
 			return u[0].id
 	
 	def update(self):
-		delta = Timer.time() * 1000 - self.time
+		delta = int(Timer.time() * 1000) - self.time
 		self.time = self.time + delta
 		for unit in self.units:
 			unit.update(delta)
-		for user in self.users:
+		for user in self.users.values():
 			for tower in user.towers:
 				tower.update(delta)
 		if winner():
@@ -197,7 +273,7 @@ class Game:
 				u = unit
 				len = math.sqrt((unit.x - x) * (unit.x - x) + (unit.y - y) * (unit.y - y))
 		return u
-		
+	
 	def findNearestTower(self, x, y, id):
 		tower = None
 		temp = []
@@ -221,20 +297,25 @@ class Game:
 				queue.append((pos[0], pos[1] - 1))
 		return None
 	
-	def nearestPoint(self, x, y):
-		return (int(round(x)), int(round(y)))
+	def nearestPoint(self, targetX, targetY, x, y):
+		return (int(int(x) + sign(targetX - x)), int(int(y) + sign(targetY - y)))
 	
-	def nearestPointTo(self, targetX, targetY, x, y):
-		return (int(round(x + sign(targetX - x))), int(round(y + sign(targetY - y))))
+	def nearestPointTo(self, targetX, targetY, x, y, range):
+		data = {}
+		for tX in range(targetX - range, targetX + range):
+			for tY in range(targetY - range, targetY + range):
+				if math.sqrt((tX - x) ** 2 + (tY - y) ** 2) <= range:
+					data[(tX, tY)] = math.sqrt((tX - x) ** 2 + (tY - y) ** 2)
+		return Utils.min_by_val(data)
 	
-	def path(self, x1, y1, x2, y2):
-		queue = [(x1, y1)]
+	def path(self, pos1, pos2):
+		queue = [pos1]
 		temp = []
 		num = {queue[0]: 0}
 		while queue:
 			pos = queue[0]
 			queue.remove(pos)
-			if pos == (x2, y2):
+			if pos == pos2:
 				break
 			elif self.plane[pos]:
 				continue
@@ -250,28 +331,29 @@ class Game:
 					queue.append((pos[0], pos[1] + 1))
 				if pos[1] > 0 and not (pos[0], pos[1] - 1) in temp:
 					queue.append((pos[0], pos[1] - 1))
-		data = []#insert(0, pos)
-		pos = (x2, y2)
-		while not pos == (x1, y1):
+		data = []
+		pos = pos2
+		while not pos == pos1:
 			pos = Utils.min_by_val({(pos[0] + 1, pos[1]): num[(pos[0] + 1, pos[1])], (pos[0], pos[1] + 1): num[(pos[0], pos[1] + 1)], (pos[0] - 1, pos[1]): num[(pos[0] - 1, pos[1])], (pos[0], pos[1] - 1): num[(pos[0], pos[1] - 1)]})
 			data.insert(0, pos)
+		data.insert(0, pos1)
 		return data
-		
+	
 	def winner(self):
-		for user in self.users:
+		for user in self.users.values():
 			if user.hp <= 0:
 				return self.other(user.id)
 		return None
 	
 	def addToUpdate(self, str):
 		self.updates.append(str)
-		
+	
 	def updatesToJSON(self):
 		str = '{['
 		for upd in self.updates:
 			str = str + upd + ','
 		return str + ']}'
-		
+	
 	def sendUpdate(self):
 		json = self.deltasToJSON()
 		socketio.emit('update-delta', json, room = gID)
@@ -280,7 +362,7 @@ class Game:
 	
 	def toJSON(self):
 		str = '{"players":['
-		for user in self.users:
+		for user in self.users.values():
 			str = str + user.toJSON() + ','
 		return str + ']}'
 	
@@ -296,7 +378,7 @@ class GameManager:
 	waiting = None
 	
 	def killAll(): # Do not use!
-		for key in games.keys:
+		for key in games.keys():
 			kill(key)
 	
 	def start(id1, id2):
