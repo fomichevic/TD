@@ -16,7 +16,7 @@
  *  );
  *
  *  const descriptor = sprite.descriptor; // То, что передано первым аргументом
- *  const position = sprite.position; // Положение центра спрайта
+ *  const position = sprite.position; // Положение спрайта
  *  const cx = position.x; // Координата по оси X
  *  const cy = position.y; // Координата по оси Y
  *  const size = sprite.size; // Размер спрайта
@@ -35,13 +35,13 @@ class Sprite {
 
     get vertexCoords() {
         return new Float32Array([
-            this.position.x - this.size.x / 2.0, this.position.y - this.size.y / 2.0,
-            this.position.x - this.size.x / 2.0, this.position.y + this.size.y / 2.0,
-            this.position.x + this.size.x / 2.0, this.position.y + this.size.y / 2.0,
+            this.position.x,               this.position.y,
+            this.position.x,               this.position.y + this.size.y,
+            this.position.x + this.size.x, this.position.y + this.size.y,
 
-            this.position.x - this.size.x / 2.0, this.position.y - this.size.y / 2.0,
-            this.position.x + this.size.x / 2.0, this.position.y - this.size.y / 2.0,
-            this.position.x + this.size.x / 2.0, this.position.y + this.size.y / 2.0,
+            this.position.x,               this.position.y,
+            this.position.x + this.size.x, this.position.y,
+            this.position.x + this.size.x, this.position.y + this.size.y,
         ]);
     }
 
