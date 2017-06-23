@@ -54,7 +54,8 @@ class GraphicsManager {
         const gm = this;
 
         class Sprite {
-            constructor(descriptor, position = {x: 0, y: 0}, size = {x: 0, y: 0}) {
+            constructor(type, descriptor, position = {x: 0, y: 0}, size = {x: 0, y: 0}) {
+                this.type = type;
                 this.descriptor = descriptor;
 
                 this.position = position;
@@ -63,8 +64,8 @@ class GraphicsManager {
                 this._pointBuffer = gm.gl.createBuffer();
 
                 this._textureBuffer = gm.gl.createBuffer();
-                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
-                gm.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                gm.gl.bindBuffer(gm.gl.ARRAY_BUFFER, this._textureBuffer);
+                gm.gl.bufferData(gm.gl.ARRAY_BUFFER, new Float32Array([
                     this.descriptor.desc.left,  this.descriptor.desc.bottom,
                     this.descriptor.desc.left,  this.descriptor.desc.top,
                     this.descriptor.desc.right, this.descriptor.desc.top,
@@ -72,13 +73,13 @@ class GraphicsManager {
                     this.descriptor.desc.left,  this.descriptor.desc.bottom,
                     this.descriptor.desc.right, this.descriptor.desc.bottom,
                     this.descriptor.desc.right, this.descriptor.desc.top,
-                ]), gm.gl.STATIC_DRAW);
+                ]), this.type);
                 this.updatePointVerticeBuffer();
             }
 
             get pointBuffer() {
-                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this._pointBuffer);
-                gm.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                gm.gl.bindBuffer(gm.gl.ARRAY_BUFFER, this._pointBuffer);
+                gm.gl.bufferData(gm.gl.ARRAY_BUFFER, new Float32Array([
                     this.position.x,               this.position.y + this.size.y,
                     this.position.x,               this.position.y,
                     this.position.x + this.size.x, this.position.y,
@@ -86,7 +87,7 @@ class GraphicsManager {
                     this.position.x,               this.position.y + this.size.y,
                     this.position.x + this.size.x, this.position.y + this.size.y,
                     this.position.x + this.size.x, this.position.y,
-                ]));
+                ]), this.type);
                 return this._pointBuffer;
             }
 
@@ -95,7 +96,9 @@ class GraphicsManager {
             }
         }
 
-        return this[type][id] = new Sprite(spriteDescriptor, position, size);
+        return this[type][id] = new Sprite(
+            type === 'background' ? gl.STATIC_DRAW : gl.DYNAMIC_DRAW,
+            spriteDescriptor, position, size);
     }
 
     dropSprite(type, id) {
