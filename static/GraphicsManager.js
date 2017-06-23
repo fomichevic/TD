@@ -23,22 +23,17 @@
  *
  *  const sprite2 = gm.getSprite('static', 'my-sprite'); // sprite === sprite2
  *
- *  const sprite3 = gm.registerSprite('dynamic', 'another-sprite', // Другой способ регистрации спрайта
- *      new Sprite( // см. Sprite.js
- *          rm.sprites['units:swordsman'],
- *          {
- *              x: 250,
- *              y: 250
- *          },
- *          {
- *              x: 200,
- *              y: 200
- *          }
- *      )
- *  );
+ *  const pos = sprite.position; // Положение спрайта
+ *  const x = pos.x; // Координата по оси X
+ *  const y = pos.y; // Координата по оси Y
+ *  const size = sprite.size; // Размер спрайта
+ *  const szx = size.x; // Размер по оси X
+ *  const szy = size.y; // Размер по оси Y
  *
+ *  const pointBuffer = sprite.pointBuffer; // Буфер вершин. Пересчитывается при получении
+ *  const textureBuffer = sprite.textureBuffer; // Буфер текстурных вершин. Считается при создании спрайта
+
  *  gm.dropSprite('static', 'my-sprite'); // Удаление спрайта по типу и ID
- *  gm.dropSprite('dynamic', 'another-sprite');
  *
  *  // Много кода с добавлением и удалением спрайтов
  *
@@ -59,44 +54,20 @@ class GraphicsManager {
         const gm = this;
 
         class Sprite {
-            constructor(descriptor, x = 0, y = 0, w = 0, h = 0) {
+            constructor(type, descriptor, position = {x: 0, y: 0}, size = {x: 0, y: 0}) {
+                this.type = type;
                 this.descriptor = descriptor;
 
-                class Vector {
-                    constructor(x, y) {
-                        this._x = x;
-                        this._y = y;
-                    }
+                this._position = position;
+                this._size = size;
 
-                    get x() {
-                        return this._x;
-                    }
+                this._pointBuffer = gm.gl.createBuffer();
+                this._updatePointBuffer();
 
-                    get y() {
-                        return this._y;
-                    }
+                this._textureBuffer = gm.gl.createBuffer();
 
-                    set x(val) {
-                        this._x = val;
-                        sprite.updatePointVerticeBuffer();
-                    }
-
-                    set y(val) {
-                        this._y = val;
-                        sprite.updatePointVerticeBuffer();
-                    }
-                }
-
-                this._position = new Vector(x, y);
-                this._size = new Vector(w, h);
-
-                const sprite = this;
-                this.pointBuffer = gm.gl.createBuffer();
-                this.updatePointVerticeBuffer();
-
-                this.textureBuffer = gm.gl.createBuffer();
-                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
-                gm.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                gm.gl.bindBuffer(gm.gl.ARRAY_BUFFER, this._textureBuffer);
+                gm.gl.bufferData(gm.gl.ARRAY_BUFFER, new Float32Array([
                     this.descriptor.desc.left,  this.descriptor.desc.bottom,
                     this.descriptor.desc.left,  this.descriptor.desc.top,
                     this.descriptor.desc.right, this.descriptor.desc.top,
@@ -108,16 +79,22 @@ class GraphicsManager {
             }
 
             get position() {
-                return this._position;
+                return {
+                    x: this._position.x,
+                    y: this._position.y
+                };
             }
 
             get size() {
-                return this._size;
+                return {
+                    x: this._size.x,
+                    y: this._size.y
+                }
             }
 
-            updatePointVerticeBuffer() {
-                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this.pointBuffer);
-                gm.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            _updatePointBuffer() {
+                gm.gl.bindBuffer(gm.gl.ARRAY_BUFFER, this._pointBuffer);
+                gm.gl.bufferData(gm.gl.ARRAY_BUFFER, new Float32Array([
                     this.position.x,               this.position.y + this.size.y,
                     this.position.x,               this.position.y,
                     this.position.x + this.size.x, this.position.y,
@@ -125,11 +102,33 @@ class GraphicsManager {
                     this.position.x,               this.position.y + this.size.y,
                     this.position.x + this.size.x, this.position.y + this.size.y,
                     this.position.x + this.size.x, this.position.y,
-                ]), gm.gl.STATIC_DRAW);
+                ]), this.type);
+            }
+
+            set position(val) {
+                this.position.x = val.x;
+                this.position.y = val.y;
+                this._updatePointBuffer();
+            }
+
+            set size(val) {
+                this.size.x = val.x;
+                this.size.y = val.y;
+                this._updatePointBuffer();
+            }
+
+            get pointBuffer() {
+                return this._pointBuffer;
+            }
+
+            get textureBuffer() {
+                return this._textureBuffer;
             }
         }
 
-        return this[type][id] = new Sprite(spriteDescriptor, position, size);
+        return this[type][id] = new Sprite(
+            type !== 'dynamic' ? this.gl.STATIC_DRAW : this.gl.DYNAMIC_DRAW,
+            spriteDescriptor, position, size);
     }
 
     dropSprite(type, id) {
