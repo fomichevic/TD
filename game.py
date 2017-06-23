@@ -185,6 +185,8 @@ class Tower:
 			delta = int(Timer.time() * 1000) - self.time
 			self.time = self.time + delta
 			self.timer = self.timer - delta
+			if self.target and self.target.hp <= 0:
+				self.target = None
 			if self.timer <= 0:
 				if not self.target or math.sqrt((self.x - self.target.x) ** 2 + (self.y - self.target.y) ** 2) > self.range:
 					self.target = self.user.game.findNearestUnit(self.x, self.y, self.user.game.other(self.user.id))
@@ -199,7 +201,7 @@ class Tower:
 
 	def toStr(self, b):
 		if b and self.target:
-			return self.type + '[' + str(self.user.id) + ']: (' + str(self.hp) + '/' + str(self.maxHP) + ') at {' + str(round(self.x, 2)) + '; ' + str(round(self.y, 2)) + '} -> ' + self.target.toStr()
+			return self.type + '[' + str(self.user.id) + ']: (' + str(self.hp) + '/' + str(self.maxHP) + ') at {' + str(round(self.x, 2)) + '; ' + str(round(self.y, 2)) + '} -> ' + self.target.toStr(False)
 		else:
 			return self.type + '[' + str(self.user.id) + ']: (' + str(self.hp) + '/' + str(self.maxHP) + ') at {' + str(round(self.x, 2)) + '; ' + str(round(self.y, 2)) + '}'
 			
@@ -299,6 +301,10 @@ class Game:
 		for unit in self.units:
 			if math.sqrt((unit.x - x) ** 2 + (unit.y - y) ** 2) <= range:
 				unit.hp = int(unit.hp - damage)
+		for user in self.users.values():
+			for tower in user.towers:
+				if math.sqrt((tower.x - x) ** 2 + (tower.y - y) ** 2) <= range:
+					tower.hp = int(tower.hp - damage)
 	
 	def findNearestUnit(self, x, y, id):
 		len = -1
@@ -325,7 +331,7 @@ class Game:
 			for tY in range(int(targetY - rng), int(targetY + rng)):
 				if math.sqrt((tX - targetX) ** 2 + (tY - targetY) ** 2) <= rng:
 					data[(tX, tY)] = math.sqrt((tX - x) ** 2 + (tY - y) ** 2)
-		return min_by_val(data)
+		return min_by_val(data) #?
 	
 	def near(self, num, pos):
 		points = {}
@@ -366,6 +372,8 @@ class Game:
 					queue.append((pos[0], pos[1] - 1))
 		data = []
 		pos = pos2
+		if pos1 == None or pos2 == None:
+			return []
 		while not pos == pos1:
 			pos = min_by_val(self.near(num, pos))
 			if pos in data:
@@ -410,7 +418,7 @@ class Game:
 		str = ''
 		for user in self.users.values():
 			for tower in user.towers:
-				str = str + tower.toStr(False) + '\n'
+				str = str + tower.toStr(True) + '\n'
 		return str
 
 	def sendFullState(self):
