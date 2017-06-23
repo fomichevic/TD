@@ -58,12 +58,14 @@ class GraphicsManager {
                 this.type = type;
                 this.descriptor = descriptor;
 
-                this.position = position;
-                this.size = size;
+                this._position = position;
+                this._size = size;
 
                 this._pointBuffer = gm.gl.createBuffer();
+                this._updatePointBuffer();
 
                 this._textureBuffer = gm.gl.createBuffer();
+
                 gm.gl.bindBuffer(gm.gl.ARRAY_BUFFER, this._textureBuffer);
                 gm.gl.bufferData(gm.gl.ARRAY_BUFFER, new Float32Array([
                     this.descriptor.desc.left,  this.descriptor.desc.bottom,
@@ -73,11 +75,24 @@ class GraphicsManager {
                     this.descriptor.desc.left,  this.descriptor.desc.bottom,
                     this.descriptor.desc.right, this.descriptor.desc.bottom,
                     this.descriptor.desc.right, this.descriptor.desc.top,
-                ]), this.type);
-                this.updatePointVerticeBuffer();
+                ]), gm.gl.STATIC_DRAW);
             }
 
-            get pointBuffer() {
+            get position() {
+                return {
+                    x: this._position.x,
+                    y: this._position.y
+                };
+            }
+
+            get size() {
+                return {
+                    x: this._size.x,
+                    y: this._size.y
+                }
+            }
+
+            _updatePointBuffer() {
                 gm.gl.bindBuffer(gm.gl.ARRAY_BUFFER, this._pointBuffer);
                 gm.gl.bufferData(gm.gl.ARRAY_BUFFER, new Float32Array([
                     this.position.x,               this.position.y + this.size.y,
@@ -88,6 +103,21 @@ class GraphicsManager {
                     this.position.x + this.size.x, this.position.y + this.size.y,
                     this.position.x + this.size.x, this.position.y,
                 ]), this.type);
+            }
+
+            set position(val) {
+                this.position.x = val.x;
+                this.position.y = val.y;
+                this._updatePointBuffer();
+            }
+
+            set size(val) {
+                this.size.x = val.x;
+                this.size.y = val.y;
+                this._updatePointBuffer();
+            }
+
+            get pointBuffer() {
                 return this._pointBuffer;
             }
 
