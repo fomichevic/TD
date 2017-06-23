@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta-charset="UTF-8">
+</head>
+<script src="ResourceManager.js"></script>
+<script src="GraphicsManager.js"></script>
+<script> 
+
+
+function main() {
+  const rm = new ResourceManager('list.json', () => {
+    var canvas = document.getElementById('glcanvas');
+    var gl = canvas.getContext('webgl');
+
+    var x=0;
+    var y=0;
+    var program = createProgram(gl,
+                              getShader(gl, 'vertex'),
+                              getShader(gl, 'fragment'));
+      
+    gl.useProgram(program);
+    gm = new GraphicsManager(gl);
+    var texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+      gm.createSprite('dynamic', 'sprite1', rm.sprites['texid:1'], {x:150,y:150},{x:70, y:80}  ); 
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, rm.textures['texid'].img);
+      gl.generateMipmap(gl.TEXTURE_2D);
+
+      gm.createSprite('static', 'sprite2', rm.sprites['texid:1'], {x:10,y:150},{x:90, y:150}  ); 
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, rm.textures['texid'].img);
+      gl.generateMipmap(gl.TEXTURE_2D); 
+
+      gm.createSprite('background', 'sprite3', rm.sprites['texid:1'], {x:80,y:140},{x:100, y:100}  ); 
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, rm.textures['texid'].img);
+      gl.generateMipmap(gl.TEXTURE_2D);
+
+    function draw(time) {
+      var rafid = requestAnimationFrame(draw);
+
+      var positionAttrib = gl.getAttribLocation(program, 'aPosition');
+      var texturePositionAttrib = gl.getAttribLocation(program, 'aTexturePosition');
+
+      var resolutionUniform = gl.getUniformLocation(program, 'uResolution');
+      var textureUniform = gl.getUniformLocation(program, 'uTexture');
+
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      gl.enable(gl.BLEND);
+      gl.blendEquation(gl.FUNC_ADD);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      resize(gl, canvas.clientWidth, canvas.clientHeight);
+      gl.uniform2f(resolutionUniform, gl.canvas.width, gl.canvas.height);
+
+      for (var i of ["background","static", "dynamic"]){
+        for (const sprite of gm.getSpriteList(i)) {
+       
+          var points = sprite.pointBuffer;
+          var texturePoints = sprite.textureBuffer;
+
+          gl.bindBuffer(gl.ARRAY_BUFFER, points);
+          gl.enableVertexAttribArray(positionAttrib);
+          gl.vertexAttribPointer(positionAttrib, 2, gl.FLOAT, false, 0, 0);
+
+          gl.bindBuffer(gl.ARRAY_BUFFER, texturePoints);    
+          gl.enableVertexAttribArray(texturePositionAttrib);
+          gl.vertexAttribPointer(texturePositionAttrib, 2, gl.FLOAT, false, 0, 0);
+
+          gl.uniform1i(textureUniform, 0);
+
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          
+        }
+    }
+      if(time>=4000) cancelAnimationFrame(rafid);
+    }
+    requestAnimationFrame(draw);
+    
+  });
+}
+
+function getShader(gl, id) {
+  var element = document.getElementById(id);
+  var getType = {
+    'x-shader/x-vertex' : gl.VERTEX_SHADER,
+    'x-shader/x-fragment' : gl.FRAGMENT_SHADER,
+  };
+  var type, source, shader;
+
+  source = element.text;
+  type = getType[element.type];
+
+  shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+
+  return shader;
+}
+
+function createProgram(gl, vertex, fragment) {
+  var program = gl.createProgram();
+
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.linkProgram(program);
+
+  return program;
+}
+
+function resize(gl, width, height) {
+  gl.canvas.width = width;
+  gl.canvas.height = height;
+  gl.viewport(0, 0, width, height);
+}
+
+
+</script>
+
+<script id="vertex" type="x-shader/x-vertex">
+      attribute vec2 aPosition;
+      attribute vec2 aTexturePosition;
+
+      uniform vec2 uResolution;
+
+      varying vec2 vTexturePosition;
+
+      void main(void) {
+        vec2 norm = vec2(1.0, -1.0) * (2.0 * aPosition / uResolution - 1.0);
+        gl_Position = vec4(norm, 0, 1);
+        vTexturePosition = aTexturePosition;
+      }
+    </script>
+    <script id="fragment" type="x-shader/x-fragment">
+      precision mediump float;
+
+      uniform sampler2D uTexture;
+
+      varying vec2 vTexturePosition;
+
+      void main(void) {
+        gl_FragColor = texture2D(uTexture, vTexturePosition);
+      }
+    </script>
+
+<style type="text/css">
+   body {
+  margin: 0;
+}
+canvas {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+}
+</style>
+<body onload="main()">
+<canvas id="glcanvas"></canvas>
+</body>
+</html>
