@@ -19,8 +19,6 @@
  *
  *  const sprite2 = gm.getSprite('static', 'my-sprite'); // sprite === sprite2
  *
- *  const pointBuffer = sprite.pointBuffer; // Буфер вершин
- *  const textureBuffer = sprite.textureBuffer; // Буфер текстурных вершин
  *  const pos = sprite.position; // Положение спрайта
  *  const x = pos.x; // Координата по оси X
  *  const y = pos.y; // Координата по оси Y
@@ -28,11 +26,9 @@
  *  const szx = size.x; // Размер по оси X
  *  const szy = size.y; // Размер по оси Y
  *
- *  pos.x = 100; // Изменение координаты X спрайта. Вызовет пересчет данных в буфере вершин автоматически.
- *  pos.y = 100; // Изменение координаты Y спрайта. Вызовет пересчет данных в буфере вершин автоматически.
- *  size.x = 100; // Изменение размера по оси X спрайта. Вызовет пересчет данных в буфере вершин автоматически.
- *  size.y = 100; // Изменение размера по оси Y спрайта. Вызовет пересчет данных в буфере вершин автоматически.
- *
+ *  const pointBuffer = sprite.pointBuffer; // Буфер вершин. Пересчитывается при получении
+ *  const textureBuffer = sprite.textureBuffer; // Буфер текстурных вершин. Считается при создании спрайта
+
  *  gm.dropSprite('static', 'my-sprite'); // Удаление спрайта по типу и ID
  *
  *  // Много кода с добавлением и удалением спрайтов
@@ -54,43 +50,16 @@ class GraphicsManager {
         const gm = this;
 
         class Sprite {
-            constructor(descriptor, x = 0, y = 0, w = 0, h = 0) {
+            constructor(descriptor, position = {x: 0, y: 0}, size = {x: 0, y: 0}) {
                 this.descriptor = descriptor;
 
-                class Vector {
-                    constructor(x, y) {
-                        this._x = x;
-                        this._y = y;
-                    }
+                this.position = position;
+                this.size = size;
 
-                    get x() {
-                        return this._x;
-                    }
+                this._pointBuffer = gm.gl.createBuffer();
 
-                    get y() {
-                        return this._y;
-                    }
-
-                    set x(val) {
-                        this._x = val;
-                        sprite.updatePointVerticeBuffer();
-                    }
-
-                    set y(val) {
-                        this._y = val;
-                        sprite.updatePointVerticeBuffer();
-                    }
-                }
-
-                this._position = new Vector(x, y);
-                this._size = new Vector(w, h);
-
-                const sprite = this;
-                this.pointBuffer = gm.gl.createBuffer();
-                this.updatePointVerticeBuffer();
-
-                this.textureBuffer = gm.gl.createBuffer();
-                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this.textureBuffer);
+                this._textureBuffer = gm.gl.createBuffer();
+                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this._textureBuffer);
                 gm.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
                     this.descriptor.desc.left,  this.descriptor.desc.bottom,
                     this.descriptor.desc.left,  this.descriptor.desc.top,
@@ -100,18 +69,11 @@ class GraphicsManager {
                     this.descriptor.desc.right, this.descriptor.desc.bottom,
                     this.descriptor.desc.right, this.descriptor.desc.top,
                 ]), gm.gl.STATIC_DRAW);
+                this.updatePointVerticeBuffer();
             }
 
-            get position() {
-                return this._position;
-            }
-
-            get size() {
-                return this._size;
-            }
-
-            updatePointVerticeBuffer() {
-                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this.pointBuffer);
+            get pointBuffer() {
+                gm.gl.bindBuffer(gl.ARRAY_BUFFER, this._pointBuffer);
                 gm.gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
                     this.position.x,               this.position.y + this.size.y,
                     this.position.x,               this.position.y,
@@ -120,7 +82,12 @@ class GraphicsManager {
                     this.position.x,               this.position.y + this.size.y,
                     this.position.x + this.size.x, this.position.y + this.size.y,
                     this.position.x + this.size.x, this.position.y,
-                ]), gm.gl.STATIC_DRAW);
+                ]));
+                return this._pointBuffer;
+            }
+
+            get textureBuffer() {
+                return this._textureBuffer;
             }
         }
 
