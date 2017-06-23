@@ -1,12 +1,15 @@
 {
+	"icons": {},
  "textures": {
-       "texid1": {
-         "src": "http://127.0.0.1:5000/static/graphics/atlas.png",
-         "desc": "http://127.0.0.1:5000/static/atlas1.json"
+       "texid": {
+         "src": "graphics/atlas.png",
+         "desc": "atlas1.json"
        },
+
        "texid2": {
-         "src": "http://127.0.0.1:5000/static/graphics/atlas.png",
-         "desc": "http://127.0.0.1:5000/static/atlas2.json"
+         "src": "graphics/atlas.png",
+         "desc": "atlas2.json"
        }
+   
    }
 }
