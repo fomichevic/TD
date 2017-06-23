@@ -28,12 +28,12 @@ class Template:
 #Constants
 UPDATE_FULL = 5
 UPDATE_DELTA = 0.1
-UPDATE_SERVER = 0.05
+UPDATE_SERVER = 0.1
 ANIM_FIST = [0.25, 0.5, 0.75]
 ANIM_BOW = [0.75]
 ANIM_SWORD = [0.25, 0.75]
 CASTLE_X = 1
-MINIMAL_RANGE = 0.1
+MINIMAL_RANGE = 0.2
 PLANE_HEIGHT = 10
 PLANE_WIDTH = 10
 #PRICE_PSY = 200
@@ -42,14 +42,14 @@ STATE_ATTACK = 'ATTACK'
 STATE_DIE = 'DIE'
 STATE_GO = 'GO'
 #TOWER_PSY = Template('psy', 20, 15, 9, 150)
-UNIT_SPEED = 2
+UNIT_SPEED = 0.05
 
 DEBUG = True
 
 TEMPLATES = {'single': Template('single', 100, 50, 10, 5, 100), 
 			 'area': Template('area', 140, 30, 15, 8, 200), 
 			 'fist': Template('fist', 20, 40, 5, 1, 50), 
-			 'bow': Template('bow', 35, 30, 10, 6, 150), 
+			 'bow': Template('bow', 35, 30, 10, 3, 150), 
 			 'sword': Template('sword', 40, 50, 15, 1.5, 100),
 			 'castle': Template('castle', 0, 500, 0, 0, 0)}
 
@@ -148,15 +148,19 @@ class Unit:
 			if self.target == None:
 				self.target = self.user.game.findNearestUnit(self.x, self.y, self.user.game.other(self.user.id))
 				if self.target == None:
-					self.target = self.user.game.findNearestTower(int(self.x), int(self.y), self.user.game.other(self.user.id))
-				if math.sqrt((self.x - self.target.x) ** 2 + (self.y - self.target.y) ** 2) <= self.range:
-					if self.timer <= 0:
-						self.target.hp = self.target.hp - self.dmg
-						self.timer = self.timeout
+					self.target = self.user.game.users[self.user.game.other(self.user.id)].castle
+			print(math.sqrt((self.x - self.target.x) ** 2 + (self.y - self.target.y) ** 2) - self.range)
+			if math.sqrt((self.x - self.target.x) ** 2 + (self.y - self.target.y) ** 2) <= self.range:
+				if self.timer <= 0:
+					print('Hit!')
+					self.target.hp = self.target.hp - self.dmg
+					self.timer = self.timeout
 			if not self.path:
 				self.path = self.user.game.path(self.user.game.nearestPoint(self.target.x, self.target.y, self.x, self.y), self.user.game.nearestPointTo(int(self.target.x), int(self.target.y), self.x, self.y, self.range))
-			if math.sqrt((self.x - self.path[0][0]) ** 2 + (self.y - self.path[0][1]) ** 2) <= MINIMAL_RANGE:
-				self.path.pop(0, None)
+			if self.path and math.sqrt((self.x - self.path[0][0]) ** 2 + (self.y - self.path[0][1]) ** 2) <= MINIMAL_RANGE:
+				self.x = self.path[0][0]
+				self.y = self.path[0][1]
+				self.path.pop(0)
 			if self.path:
 				self.move(self.path[0][0] - self.x, self.path[0][1] - self.y)
 	
@@ -385,7 +389,6 @@ class Game:
 				print(data)
 				raise pos
 			data.insert(0, pos)
-		data.insert(0, pos1)
 		return data
 	
 	def winner(self):
@@ -413,29 +416,38 @@ class Game:
 		for user in self.users.values():
 			str = str + user.toJSON() + ','
 		return str + ']}'
-	
+
 	def unitsToString(self):
 		str = ''
 		for unit in self.units:
 			str = str + unit.toJSON() + '\n'
 		return str
-	
+
 	def sendFullState(self):
 		del self.updates[:]
 		socketio.emit('update-full', self.toJSON(), room = self.id)
-	
+
+	def toStr(self):
+		s = ''
+		for user in self.users.values():
+			s = s + '[' + str(user.id) + ']: (' + str(user.castle.hp) + '/' + str(user.castle.maxHP) + ')\n'
+		return s
+
+	def isOver(self):
+		return not self.winner() == None
+
 class GameManager:
 	games = {}
 	threads = {}
 	players = {}
 	waiting = None
-	
+
 	@classmethod
 	def killAll(cls): # Do not use!
 		keys = list(cls.games.keys())
 		for key in keys:
 			cls.kill(key)
-	
+
 	@classmethod
 	def start(cls, id1, id2):
 		global DEBUG
@@ -449,13 +461,15 @@ class GameManager:
 		cls.players.update(cls.games[gID].users)
 		cls.threads[gID] = [eventlet.spawn(Utils.infinite, cls.games[gID].update, UPDATE_SERVER), eventlet.spawn(Utils.infinite, cls.games[gID].sendFullState, UPDATE_FULL), eventlet.spawn(Utils.infinite, cls.games[gID].sendUpdate, UPDATE_DELTA)]
 		return gID
-	
+
 	@classmethod
 	def stop(cls, gID):
 		win = cls.games[gID].winner()
-		socketio.emit('end', '{"winner"=' + win + '}', room = gID)
+		socketio.emit('end', '{"winner"=' + str(win) + '}', room = gID)
+		if DEBUG:
+			print('Winner is ' + str(win))
 		cls.kill(gID)
-	
+
 	@classmethod
 	def kill(cls, gID):
 		global DEBUG
@@ -468,9 +482,11 @@ class GameManager:
 			close_room(gID)
 		for thread in cls.threads[gID]:
 			thread.kill()
+		game = cls.games[gID]
 		del cls.threads[gID]
 		del cls.games[gID]
-		
+		del game
+	
 	@classmethod
 	def join(cls, id):
 		if cls.waiting == None:
@@ -478,24 +494,22 @@ class GameManager:
 		else:
 			cls.start(cls.waiting, id)
 			cls.waiting = None
-	
+
 	@classmethod
 	def leave(cls, id):
 		socketio.emit('end', '{"winner"=' + cls.games[cls.players[id].game.id].other(id) + '}', room = cls.players[id].game.id)
 		cls.kill(players[id].game.id)
-		
+
 #Testing
 gID = GameManager.start(1, 2)
-print(gID)
-print(Utils.min_by_val)
 game = GameManager.games[gID]
 def test_print():
-	global game
-	if len(game.units) < 1 and not bool(random.getrandbits(1)):
-		game.users[random.getrandbits(1) + 1].buy('{"type":"' + random.choice(['fist', 'bow', 'sword']) + '"}')
-	print('\n' + game.toJSON() + '\n')
-	print('\n' + str(game.unitsToString()))
-test_thread = eventlet.spawn(Utils.infinite(test_print, 1))
+	if not game.isOver():
+		if len(game.units) < 1 and not bool(random.getrandbits(1)):
+			game.users[random.getrandbits(1) + 1].buy('{"type":"' + random.choice(['fist', 'bow', 'sword']) + '"}')
+		print('\n' + game.toStr())
+		print('\n' + str(game.unitsToString()))
+test_thread = eventlet.spawn(Utils.infinite, test_print, 1)
 #GameManager.killAll()
 while True:
 	eventlet.sleep(50)
