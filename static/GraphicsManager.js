@@ -127,7 +127,7 @@ class GraphicsManager {
         }
 
         return this[type][id] = new Sprite(
-            type === 'background' ? gl.STATIC_DRAW : gl.DYNAMIC_DRAW,
+            type === 'background' ? this.gl.STATIC_DRAW : this.gl.DYNAMIC_DRAW,
             spriteDescriptor, position, size);
     }
 
