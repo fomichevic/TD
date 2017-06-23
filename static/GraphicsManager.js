@@ -11,34 +11,29 @@
  *
  *      // Далее 3 аргумента конструктора спрайта
  *      rm.sprites['units:knight'],
- *      {
- *          x: 150,
- *          y: 150
- *      },
- *      {
- *          x: 100,
- *          y: 100
- *      }
+ *      150, // Координата X спрайта
+ *      150, // Координата Y спрайта
+ *      100, // Размер по оси X спрайта
+ *      100  // Размер по оси Y спрайта
  *  );
  *
  *  const sprite2 = gm.getSprite('static', 'my-sprite'); // sprite === sprite2
  *
- *  const sprite3 = gm.registerSprite('dynamic', 'another-sprite', // Другой способ регистрации спрайта
- *      new Sprite( // см. Sprite.js
- *          rm.sprites['units:swordsman'],
- *          {
- *              x: 250,
- *              y: 250
- *          },
- *          {
- *              x: 200,
- *              y: 200
- *          }
- *      )
- *  );
+ *  const pointBuffer = sprite.pointBuffer; // Буфер вершин
+ *  const textureBuffer = sprite.textureBuffer; // Буфер текстурных вершин
+ *  const pos = sprite.position; // Положение спрайта
+ *  const x = pos.x; // Координата по оси X
+ *  const y = pos.y; // Координата по оси Y
+ *  const size = sprite.size; // Размер спрайта
+ *  const szx = size.x; // Размер по оси X
+ *  const szy = size.y; // Размер по оси Y
+ *
+ *  pos.x = 100; // Изменение координаты X спрайта. Вызовет пересчет данных в буфере вершин автоматически.
+ *  pos.y = 100; // Изменение координаты Y спрайта. Вызовет пересчет данных в буфере вершин автоматически.
+ *  size.x = 100; // Изменение размера по оси X спрайта. Вызовет пересчет данных в буфере вершин автоматически.
+ *  size.y = 100; // Изменение размера по оси Y спрайта. Вызовет пересчет данных в буфере вершин автоматически.
  *
  *  gm.dropSprite('static', 'my-sprite'); // Удаление спрайта по типу и ID
- *  gm.dropSprite('dynamic', 'another-sprite');
  *
  *  // Много кода с добавлением и удалением спрайтов
  *
