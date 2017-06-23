@@ -1,8 +1,7 @@
 {% extends "base.html"%}
 {% block content %}
-<a href ="{{url_for('next_page')}}">Next</a>
 	<head charset="utf-8">
-		<title>TOP10</title>
+		<title>TOP</title>
 		<style>
 		table {
 			table-layout: fixed; 
@@ -20,14 +19,13 @@
 		<col class="col2">
 		<col class="col3">
 		<col class="col4">
- 		<caption>TOP 10 PLAYERS</caption>
-		<tr>
+ 		<caption>TOP</caption>
 		{% for pos, user in rating %}
 			<tr>
 			<th>{{pos}}</th><th><img src="image address"></th><th>{{user[0]|e}}</th><th>{{user[1]|e}}</th>
 			</tr> 
 		{% endfor %}
-		</tr>
 		</table>
+                <a href ="{{url_for('top', start=start, amount=amount)}}">Next</a>
 	</body>
 {% endblock %}

@@ -18,7 +18,7 @@
                         <th>{{user[0]|e}}</th><th>{{user[1]|e}}</th><th>{{user[2]|e}}</th><th>{{user[3]|e}}</th>
 			</tr> 
 		{% endfor %}
-   <a href ="{{url_for('next_page')}}">Next</a>
   </table>
+  <a href ="{{url_for('database', start=start, amount=amount)}}">Next</a>
  </body>
 </html>

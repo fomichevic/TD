@@ -19,7 +19,7 @@ def create_db():
 def update_score(uid, diff):
     tpool.execute(execute,'UPDATE users SET score=score+? WHERE id=?', [diff, uid])
 
-def top(amount, start):
+def users_top(amount, start):
     return tpool.execute(execute,'SELECT nickname, score FROM users ORDER BY score DESC LIMIT ? OFFSET ?', [amount, start])
 
 def create_user(uid, nick, status):
